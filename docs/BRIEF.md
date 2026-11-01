@@ -1,0 +1,135 @@
+# cobalt — project brief
+
+A bootc image that will replace Bazzite on the main PC: Hyprland with a
+GNOME-style shell and libadwaita apps, on Universal Blue's desktop-less base,
+keeping Bazzite's gaming stack.
+
+Hardware it targets first: Ryzen 9 9900X, Radeon RX 9070 (games, desktop),
+Radeon 610M iGPU (used for VMs), Secure Boot on with the Universal Blue key
+enrolled.
+
+## Base image
+
+- `FROM ghcr.io/ublue-os/base-main:latest`. It follows the newest Fedora, so a
+  failed build on a Fedora bump just pauses updates.
+- Gaming stack ported from Bazzite's `Containerfile`, one script per piece:
+  - OGC kernel from `ghcr.io/ublue-os/akmods:ogc-<fedora>`, version picked to
+    match the base image
+  - Valve-patched Mesa from Terra (`terra-mesa`), Fedora's Mesa excluded
+  - `terra-gamescope`, Steam from Terra
+  - `scx-scheds` / `scx-tools`
+  - Firmware, udev rules and helpers from `ublue-os/bazzite` and
+    `ublue-os/packages` COPRs, chosen package by package
+- Also in the image: ROCm (`rocm-hip`, `rocm-runtime`), ghostty, distrobox,
+  podman, Homebrew.
+- **Secure Boot rule:** kernel and kernel modules only from Fedora or
+  Universal Blue's prebuilt, signed images, always matching versions. Never
+  build kernel code ourselves.
+
+## Session
+
+- Login: **GDM**. Its greeter is gnome-shell, so gnome-shell and mutter are in
+  the image, but there is no GNOME session.
+- Compositor: **Hyprland**, **dwindle** layout by default.
+- Portals: `xdg-desktop-portal-hyprland` (screenshots, screencast) and
+  `xdg-desktop-portal-gtk` (file chooser, settings/appearance).
+- Hyprland reads system defaults from `/usr/share/cobalt/hypr/`. The user's
+  config only sources them and adds overrides, so image updates still reach
+  existing users. Hyprland has moved to a Lua config (`hyprland.lua`), so
+  check the current format before writing it.
+
+## Shell: AGS v3 + Astal (TypeScript, GTK4)
+
+GNOME-style top bar:
+- Left: Activities button and workspaces
+- Center: clock, notification center
+- Right: tray, quick settings
+
+Astal provides the backends: Hyprland, network, Bluetooth, WirePlumber
+(audio), battery, MPRIS (media), notifd (notifications), tray.
+
+## Our apps
+
+All in **TypeScript/GJS with GTK4 + libadwaita**, sharing code and the Astal
+libraries with the shell.
+
+| App | What it does |
+|---|---|
+| Settings | GNOME Settings-like app (`AdwNavigationSplitView` + preference pages). Writes the same GSettings keys GNOME uses (`org.gnome.desktop.interface`: color scheme, accent color, fonts), so every libadwaita app follows it through the settings portal. |
+| Activities overview | Super opens open windows and workspaces plus app search. |
+| Quick settings | GNOME's top-right menu: Wi-Fi, Bluetooth, volume, brightness, dark mode, power. |
+| Shortcut cheat sheet | Overlay listing all keybindings, generated from the Hyprland config. |
+| Welcome | First-boot app: Flatpak picks, Secure Boot key enrollment, dotfiles, basics of tiling. |
+
+## Apps from elsewhere
+
+- **In the image:** Nautilus (with gvfs), ghostty, system tools that need host
+  integration.
+- **Flatpak (Flathub):** Text Editor, Loupe, Papers, Calculator, ProtonPlus,
+  and everything else.
+
+## Gaming
+
+- Steam runs as a normal window inside Hyprland. No separate gamescope session.
+- VRR on, tearing allowed for fullscreen games through window rules, direct
+  scanout.
+- Blur and animations turned off for fullscreen games.
+
+## Look
+
+Adwaita with extras: Adwaita colors and accent color, rounded corners, small
+gaps, blur and translucency on shell surfaces, livelier animations.
+
+## Keybindings (draft, GNOME-flavored)
+
+| Keys | Action |
+|---|---|
+| Super (tap) | Activities overview |
+| Super+A | App grid / launcher |
+| Super+Return | Terminal (ghostty) |
+| Super+E | Files (Nautilus) |
+| Super+Q, Alt+F4 | Close window |
+| Super+Up | Maximize toggle |
+| Super+F | Toggle floating |
+| Super+Arrows | Move focus |
+| Super+Shift+Arrows | Move window |
+| Super+1…9 | Go to workspace |
+| Super+Shift+1…9 | Move window to workspace |
+| Super+Page Up/Down | Previous / next workspace |
+| Alt+Tab | Window switcher |
+| Super+V | Notification center |
+| Super+L | Lock screen |
+| Super+Space | Switch input source |
+| Super+/ | Shortcut cheat sheet |
+| Print | Screenshot UI |
+
+## Development setup
+
+- Image changes: commit → GitHub Actions builds and signs
+  `ghcr.io/tduarte/cobalt` → `bootc upgrade` in the VM.
+- VM: GNOME Boxes with virgl 3D acceleration pinned to the iGPU render node
+  (`pci-0000:0f:00.0-render`). Start from the `build-disk` qcow2 or a
+  Silverblue ISO, then `bootc switch`. Hyprland needs
+  `no_hardware_cursors` in the VM.
+- Shell and apps: develop in a `cobalt` distrobox, then package them into the
+  image once stable.
+
+## Milestones
+
+1. Gaming base: kernel, Mesa, Steam, ROCm on base-main. Boots to a TTY in the
+   VM with Secure Boot rules respected.
+2. Desktop basics: Hyprland, GDM, portals, Nautilus, default config,
+   keybindings.
+3. AGS top bar and quick settings.
+4. Activities overview and shortcut cheat sheet.
+5. Settings app.
+6. Welcome app.
+7. Switch the main PC with `bootc switch` (rollback to Bazzite available).
+
+## Open questions
+
+- How our apps are packaged into the image: a build stage in the
+  Containerfile, or RPMs built in CI.
+- Which Bazzite helpers (`ujust` recipes, media automount, etc.) to carry over.
+- Dotfiles: managed by the image defaults alone, or also a personal dotfiles
+  repo.
