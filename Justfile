@@ -462,3 +462,34 @@ format:
     fi
     # Run shfmt on all Bash scripts
     find . -iname "*.sh" -type f -exec shfmt --write "{}" ';'
+
+# Dev VM in GNOME Boxes (see docs/BRIEF.md "Development setup")
+dev_vm := env("COBALT_VM", "silverblue43")
+dev_vm_gpu := env("COBALT_VM_GPU", "/dev/dri/by-path/pci-0000:03:00.0-render")
+
+# Boxes' play button drops the GPU pin and libvirt falls back to the iGPU,
+# which is too slow at 4K, so re-apply the pin on every start.
+# Start the dev VM with virgl on dev_vm_gpu (then view it in Boxes)
+[group('Dev VM')]
+vm-start:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    virsh() { flatpak run --command=virsh org.gnome.Boxes -c qemu:///session "$@"; }
+    # Boxes' sandbox has its own /tmp, so the XML must live somewhere shared
+    xml="$(mktemp -p "$HOME/.cache" cobalt-vm.XXXXXX.xml)"
+    trap 'rm -f "$xml"' EXIT
+    virsh dumpxml --inactive "{{ dev_vm }}" \
+        | sed -E "s|<gl enable='[a-z]+'[^>]*/>|<gl enable='yes' rendernode='{{ dev_vm_gpu }}'/>|; s|accel3d='no'|accel3d='yes'|" \
+        > "$xml"
+    virsh define "$xml" >/dev/null
+    virsh start "{{ dev_vm }}"
+
+# Gracefully shut down the dev VM
+[group('Dev VM')]
+vm-stop:
+    flatpak run --command=virsh org.gnome.Boxes -c qemu:///session shutdown "{{ dev_vm }}"
+
+# SSH into the dev VM (forwarded on 127.0.0.1:2222)
+[group('Dev VM')]
+vm-ssh *args:
+    ssh -i "$HOME/.ssh/cobalt-vm" -p 2222 -o UserKnownHostsFile="$HOME/.ssh/known_hosts.cobalt-vm" "$USER@127.0.0.1" {{ args }}

@@ -4,9 +4,9 @@ A bootc image that will replace Bazzite on the main PC: Hyprland with a
 GNOME-style shell and libadwaita apps, on Universal Blue's desktop-less base,
 keeping Bazzite's gaming stack.
 
-Hardware it targets first: Ryzen 9 9900X, Radeon RX 9070 (games, desktop),
-Radeon 610M iGPU (used for VMs), Secure Boot on with the Universal Blue key
-enrolled.
+Hardware it targets first: ASUS ROG Strix B850-I, Ryzen 9 9900X, Radeon
+RX 9070 (games, desktop, dev VM), Radeon 610M iGPU, Secure Boot on with the
+Universal Blue key enrolled.
 
 ## Base image
 
@@ -107,10 +107,17 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 
 - Image changes: commit → GitHub Actions builds and signs
   `ghcr.io/tduarte/cobalt` → `bootc upgrade` in the VM.
-- VM: GNOME Boxes with virgl 3D acceleration pinned to the iGPU render node
-  (`pci-0000:0f:00.0-render`). Start from the `build-disk` qcow2 or a
-  Silverblue ISO, then `bootc switch`. Hyprland needs
-  `no_hardware_cursors` in the VM.
+- VM: GNOME Boxes VM `silverblue43`, switched to cobalt with `bootc switch`.
+  Start it with `just vm-start` (not Boxes' play button), then open it in
+  Boxes to view; `just vm-ssh` / `just vm-stop` for the rest.
+  - virgl is pinned to the RX 9070 (`pci-0000:03:00.0-render`). The 610M
+    iGPU is too slow at 4K, and Boxes drawing on a different GPU than the
+    VM renders on garbles the display.
+  - Boxes drops the render-node pin when it starts a VM (libvirt then picks
+    the iGPU), which is why `vm-start` re-applies it on every start.
+  - SSH: `127.0.0.1:2222` → VM port 22 through a QEMU `hostfwd` NIC (Boxes'
+    Flatpak has no `passt`), key `~/.ssh/cobalt-vm`.
+  - Hyprland needs `no_hardware_cursors` in the VM.
 - Shell and apps: develop in a `cobalt` distrobox, then package them into the
   image once stable.
 
