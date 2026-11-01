@@ -1,3 +1,4 @@
+import AstalApps from "gi://AstalApps"
 import AstalTray from "gi://AstalTray"
 import GLib from "gi://GLib"
 import Gio from "gi://Gio"
@@ -53,7 +54,21 @@ function quit(item: AstalTray.TrayItem, anchor: Gtk.Widget) {
   }
 }
 
-const appName = (item: AstalTray.TrayItem) => item.title || item.tooltipMarkup || item.id
+const apps = new AstalApps.Apps()
+
+// Tray items often carry an internal id ("tray-icon tray app 2138-1") and a
+// lowercase title ("handy"); prefer the app's own name from its .desktop entry
+// ("Handy"), like GNOME does
+function appName(item: AstalTray.TrayItem) {
+  const keys = [item.id, item.title].filter(Boolean).map((k) => k.toLowerCase())
+  const app = apps.get_list().find((a) => {
+    const entry = (a.entry || "").toLowerCase().replace(/\.desktop$/, "")
+    const exe = (a.executable || "").toLowerCase().split(/\s+/)[0].split("/").pop()
+    const name = (a.name || "").toLowerCase()
+    return keys.some((k) => k === entry || entry.endsWith(`.${k}`) || k === exe || k === name)
+  })
+  return app?.name || item.title || item.id
+}
 
 function BackgroundApp({ item }: { item: AstalTray.TrayItem }) {
   return (
@@ -71,7 +86,7 @@ function BackgroundApp({ item }: { item: AstalTray.TrayItem }) {
           <image gicon={createBinding(item, "gicon")} pixelSize={24} />
           <label
             class="app-title"
-            label={createBinding(item, "title")((t) => t || appName(item))}
+            label={createBinding(item, "title")(() => appName(item))}
             xalign={0}
             hexpand
             ellipsize={Pango.EllipsizeMode.END}

@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+# Dev VM only (run by hyprland.lua when the vendor is QEMU): workarounds for
+# virgl that real hardware doesn't need. Runtime drop-ins, gone after logout.
+
+set -euo pipefail
+
+# Ghostty's GL renderer crashes/garbles on virgl. Launches from the overview
+# go through its D-Bus-activated service, so give that service software GL.
+dropin="${XDG_RUNTIME_DIR}/systemd/user/app-com.mitchellh.ghostty.service.d"
+mkdir -p "$dropin"
+printf '[Service]\nEnvironment=LIBGL_ALWAYS_SOFTWARE=1\n' > "$dropin/cobalt-vm.conf"
+systemctl --user daemon-reload

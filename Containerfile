@@ -28,6 +28,9 @@ COPY build_files/dev.sh /
 FROM scratch AS desktop-step
 COPY build_files/desktop.sh /
 
+FROM scratch AS extras-step
+COPY build_files/extras.sh /
+
 FROM scratch AS shell-step
 COPY build_files/shell.sh /
 COPY shell /shell
@@ -93,6 +96,12 @@ RUN --mount=type=bind,from=desktop-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/desktop.sh
+
+RUN --mount=type=bind,from=extras-step,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
+    --mount=type=tmpfs,dst=/tmp \
+    /ctx/extras.sh
 
 RUN --mount=type=bind,from=shell-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \

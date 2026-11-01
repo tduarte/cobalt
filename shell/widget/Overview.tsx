@@ -65,6 +65,8 @@ async function refreshWindows() {
       focusHistoryID: c.focusHistoryID,
     }))
   setWindows(wins)
+  // Nothing open on this workspace: show the app grid instead of an empty view
+  if (wins.length === 0 && mode.get() === "windows") setMode("apps")
 
   // Fresh thumbnails (~40 ms each); unique names so GTK doesn't reuse a cached image
   const stamp = Date.now()

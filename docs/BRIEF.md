@@ -167,6 +167,15 @@ gaps, blur and translucency on shell surfaces, livelier animations.
   on the same keys runs it again to stop. Handy itself autostarts with the
   session.
 
+## Backlog (polish)
+
+- Background Apps hover states (compare GNOME 48): the "N Background Apps ›"
+  row should highlight as a full-width pill; an app row should highlight as one
+  rounded rectangle covering the icon, name and ✕, not just the name part.
+- Overview stage 2: dash (dock) and workspace thumbnails.
+- `build-disk.yml`: migrate to `osbuild/image-builder-action` before we need
+  an installer ISO.
+
 ## Open questions
 
 - How our apps are packaged into the image: a build stage in the

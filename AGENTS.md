@@ -180,6 +180,10 @@ Hard-won facts:
   sliver of alpha (`rgba(0,0,0,0.01)`).
 - Window thumbnails: `grim -T <stableId>` captures one window (~40 ms);
   `stableId` comes from `hyprctl clients -j` (the window address doesn't work).
+- Tray items' `id` is often generic (Tauri apps: `tray-icon tray app <pid>-1`)
+  and `title` a lowercase name; match both against `.desktop` entries for the
+  real app name (`widget/qs/background.tsx`). Inspect an item over D-Bus with
+  `busctl --user get-property <service> <path> org.kde.StatusNotifierItem Id`.
 - Pointer-driven features can be tested over SSH by warping the cursor:
   `hyprctl dispatch 'hl.dsp.cursor.move({ x = 640, y = 799 })'`.
 - Only one menu is open at a time (`lib/menus.ts` state); a backdrop window

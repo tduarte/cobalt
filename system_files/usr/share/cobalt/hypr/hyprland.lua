@@ -57,6 +57,11 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("wl-paste --watch cliphist store")
     -- Top bar, menus and notifications (AGS, shell/ in the repo)
     hl.exec_cmd("cobalt-shell")
+    -- Handy (speech-to-text) in the background; hold Alt+Space to dictate
+    hl.exec_cmd("handy --start-hidden")
+    if in_vm then
+        hl.exec_cmd("/usr/libexec/cobalt/vm-session-fixes")
+    end
 end)
 
 
@@ -229,6 +234,12 @@ hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("ags request -i cobalt toggle date-me
 hl.bind(mainMod .. " + slash", hl.dsp.exec_cmd("ags request -i cobalt shortcuts"), { desc = "System: Keyboard shortcuts" })
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(lock), { desc = "System: Lock screen" })
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit(), { desc = "System: Log out" })
+
+-- Dictation with Handy: hold Alt+Space to record, release to transcribe into
+-- the focused app. Handy's own shortcut is unreliable on Wayland, so Hyprland
+-- toggles it on press and again on release.
+hl.bind("ALT + space", hl.dsp.exec_cmd("handy --toggle-transcription"), { desc = "System: Dictate (hold)" })
+hl.bind("ALT + space", hl.dsp.exec_cmd("handy --toggle-transcription"), { release = true })
 
 -- Screenshots (saved to ~/Pictures/Screenshots and copied)
 hl.bind("Print",         hl.dsp.exec_cmd("cobalt-screenshot area"),   { desc = "System: Screenshot area" })
