@@ -68,7 +68,7 @@ libraries with the shell.
 | Settings | GNOME Settings-like app (`AdwNavigationSplitView` + preference pages). Writes the same GSettings keys GNOME uses (`org.gnome.desktop.interface`: color scheme, accent color, fonts), so every libadwaita app follows it through the settings portal. |
 | Date menu | Media player cards (MPRIS) and notifications on the left with Clear; date heading and a custom GNOME-style calendar on the right. Later: events (Evolution Data Server), world clocks, weather. |
 | Activities overview | Super opens open windows and workspaces plus app search. **Hot Edge** (like the GNOME extension): pushing the mouse against the bottom edge opens it too, via a thin invisible layer-shell strip. |
-| Quick settings | GNOME 48's menu: screenshot / lock / power (inline power menu); volume + Sound Output, microphone + Sound Input, brightness (backlight or DDC/CI); toggles Wi-Fi (networks + password), Wired, VPN, Bluetooth (devices), Power Mode, Night Light (hyprsunset), Do Not Disturb, Caffeine, Airplane Mode. Toggles with an arrow open their menu inline below the row, one at a time. Orange mic indicator in the bar while recording. Not yet: Settings gear (M5), Background Apps (no portal on Hyprland), Dark Style (removed by choice). |
+| Quick settings | GNOME 48's menu: screenshot / lock / power (inline power menu); volume + Sound Output, microphone + Sound Input, brightness (backlight or DDC/CI); toggles Wi-Fi (networks + password), Wired, VPN, Bluetooth (devices), Power Mode, Night Light (hyprsunset), Do Not Disturb, Caffeine, Airplane Mode. Toggles with an arrow open their menu inline below the row, one at a time. Orange mic indicator in the bar while recording. Not yet: Settings gear (M5), Background Apps (M4), Dark Style (removed by choice). |
 | Shortcut cheat sheet | Overlay listing all keybindings, generated from the Hyprland config. |
 | Welcome | First-boot app: Flatpak picks, Secure Boot key enrollment, dotfiles, basics of tiling. |
 
@@ -150,10 +150,22 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 2. Desktop basics: Hyprland, GDM, portals, Nautilus, default config,
    keybindings.
 3. AGS top bar and quick settings.
-4. Activities overview (with Hot Edge) and shortcut cheat sheet.
+4. Background Apps in quick settings (built from tray/StatusNotifierItem apps;
+   the bar gets no tray icons, like stock GNOME), Activities overview (with
+   Hot Edge), shortcut cheat sheet.
 5. Settings app.
 6. Welcome app.
 7. Switch the main PC with `bootc switch` (rollback to Bazzite available).
+
+## Extras
+
+- **Handy** (local speech-to-text, MIT, https://github.com/cjpais/Handy):
+  install the release RPM in the image (pinned version, like Adwair) plus
+  `wtype` for typing into apps on Wayland. Push-to-talk on **hold Alt+Space**
+  via Hyprland, since Handy's own global shortcut is unreliable on Wayland:
+  press runs `handy --toggle-transcription` to start, a `release = true` bind
+  on the same keys runs it again to stop. Handy itself autostarts with the
+  session.
 
 ## Open questions
 

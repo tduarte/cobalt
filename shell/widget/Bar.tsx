@@ -3,11 +3,10 @@ import { Astal, Gdk } from "ags/gtk4"
 import { onCleanup } from "ags"
 import { DateMenuButton } from "./DateMenu"
 import { QuickSettingsButton } from "./QuickSettings"
-import Tray from "./Tray"
 import Workspaces from "./Workspaces"
 
-// GNOME-style top bar: Activities/workspaces left, clock center, tray and
-// quick settings right
+// GNOME-style top bar: Activities/workspaces left, clock center, quick
+// settings right (tray apps are listed under Background Apps instead)
 export default function Bar({ gdkmonitor }: { gdkmonitor: Gdk.Monitor }) {
   let win: Astal.Window
   const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
@@ -35,7 +34,6 @@ export default function Bar({ gdkmonitor }: { gdkmonitor: Gdk.Monitor }) {
           <DateMenuButton />
         </box>
         <box $type="end" spacing={4}>
-          <Tray />
           <QuickSettingsButton />
         </box>
       </centerbox>

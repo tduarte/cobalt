@@ -1,11 +1,11 @@
 import AstalHyprland from "gi://AstalHyprland"
 import Gtk from "gi://Gtk?version=4.0"
 import { For, createBinding, createComputed } from "ags"
-import { openLauncher } from "../lib/system"
+import { toggleOverview } from "./Overview"
 
 // GNOME 45+ style Activities button: a dot per workspace, the active one
-// stretched into a pill. Like GNOME, the whole button opens the overview
-// (the launcher until M4); the dots are indicators, not separate buttons.
+// stretched into a pill. Like GNOME, the whole button opens the overview;
+// the dots are indicators, not separate buttons.
 export default function Workspaces({ monitor }: { monitor: string }) {
   const hypr = AstalHyprland.get_default()
   const workspaces = createBinding(hypr, "workspaces")
@@ -18,7 +18,7 @@ export default function Workspaces({ monitor }: { monitor: string }) {
   )
 
   return (
-    <button class="panel-button activities" onClicked={openLauncher}>
+    <button class="panel-button activities" onClicked={() => toggleOverview()}>
       <box class="workspace-dots" valign={Gtk.Align.CENTER} spacing={6}>
         <For each={sorted}>
           {(ws: AstalHyprland.Workspace) => (

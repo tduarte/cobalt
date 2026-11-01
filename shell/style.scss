@@ -383,6 +383,38 @@ button.pill {
   }
 }
 
+// "N Background Apps ›" row and its list
+button.background-apps-row {
+  background: transparent;
+  border-radius: 14px;
+  padding: 10px 16px;
+  color: $fg-dim;
+  font-weight: bold;
+
+  &:hover {
+    background-color: $hover;
+  }
+}
+
+.background-app {
+  .app-title {
+    font-weight: bold;
+  }
+
+  button.close-app {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    margin-right: 8px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.12);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
 // Inline menus (Wi-Fi networks, sound devices, power modes...)
 .qs-menu-spacer {
   margin-top: 10px;
@@ -423,6 +455,11 @@ button.pill {
     &:hover {
       background-color: $hover;
     }
+  }
+
+  .qs-menu-subtitle {
+    color: $fg-dim;
+    padding: 0 12px 6px 12px;
   }
 
   .qs-menu-empty {
@@ -497,5 +534,143 @@ button.pill {
     margin-top: 8px;
     border-radius: 999px;
     background-color: $card-bg;
+  }
+}
+
+// ---- Activities overview ----
+
+window.overview {
+  background: transparent;
+}
+
+.overview-content {
+  // Nearly opaque: the windows themselves are shown as thumbnails
+  background-color: rgba(22, 22, 25, 0.94);
+  color: $fg;
+  padding: 24px 80px 40px 80px;
+}
+
+entry.overview-search,
+.overview-search {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 0 16px;
+  margin-bottom: 32px;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: $fg;
+  font-size: 12pt;
+  box-shadow: none;
+  border: none;
+}
+
+button.window-preview {
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+
+  .thumb-frame {
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  .window-app-icon {
+    margin-bottom: -24px;
+    -gtk-icon-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+
+  .window-title {
+    margin-top: 18px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background-color: rgba(0, 0, 0, 0.6);
+    font-weight: bold;
+  }
+
+  &:hover .thumb-frame {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35), 0 4px 16px rgba(0, 0, 0, 0.5);
+  }
+}
+
+button.app-tile {
+  min-width: 128px;
+  min-height: 128px;
+  padding: 12px;
+  border-radius: 20px;
+  background: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  color: $fg;
+
+  &:hover,
+  &:focus-visible {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.overview-hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14pt;
+  font-weight: bold;
+}
+
+// A fully transparent layer surface is never mapped, so the hot edge strip
+// needs a sliver of alpha (invisible in practice)
+window.hot-edge {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+// ---- Keyboard shortcut cheat sheet ----
+
+window.shortcuts-window {
+  background: transparent;
+}
+
+.shortcuts-backdrop {
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+.shortcuts {
+  background-color: $menu-bg;
+  color: $fg;
+  border-radius: 28px;
+  padding: 28px 36px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+
+  .shortcuts-title {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .section-title {
+    color: $fg-dim;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .shortcut-row {
+    min-height: 34px;
+    padding: 2px 0;
+  }
+
+  .keycap {
+    min-width: 18px;
+    padding: 3px 8px;
+    border-radius: 7px;
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+    font-size: 9.5pt;
+    font-weight: bold;
+  }
+
+  .shortcuts-hint {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 9pt;
+    margin-top: 6px;
   }
 }

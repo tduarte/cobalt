@@ -17,11 +17,6 @@ export function sh(cmd: string) {
   execAsync(["sh", "-c", cmd]).catch((err) => console.error(cmd, err))
 }
 
-// Temporary launcher until the Activities overview (M4)
-export function openLauncher() {
-  sh("pkill -x fuzzel || fuzzel --config /usr/share/cobalt/fuzzel/fuzzel.ini")
-}
-
 export const power = {
   lock: () => sh("loginctl lock-session"),
   suspend: () => sh("systemctl suspend"),

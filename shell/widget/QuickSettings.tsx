@@ -9,6 +9,7 @@ import Pango from "gi://Pango"
 import { For, With, createBinding, createState } from "ags"
 import { closeMenus, openMenu, registerSubMenus, toggleMenu } from "../lib/menus"
 import PanelMenu from "./PanelMenu"
+import BackgroundApps from "./qs/background"
 import { power, sh } from "../lib/system"
 import {
   BrightnessSlider,
@@ -453,6 +454,7 @@ export default function QuickSettings() {
             airplaneSpec(),
           ]}
         />
+        <BackgroundApps open={open} />
       </box>
     </PanelMenu>
   )

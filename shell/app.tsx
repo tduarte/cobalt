@@ -3,10 +3,13 @@ import { For, This, createBinding } from "ags"
 import { describeMenu, menuNames, toggleMenu } from "./lib/menus"
 import style from "./style.scss"
 import Bar from "./widget/Bar"
+import HotEdge from "./widget/HotEdge"
 import DateMenu from "./widget/DateMenu"
 import { MenuBackdrop } from "./widget/PanelMenu"
 import QuickSettings from "./widget/QuickSettings"
+import Shortcuts, { toggleShortcuts } from "./widget/Shortcuts"
 import NotificationBanners from "./widget/NotificationBanners"
+import Overview, { searchOverview, toggleOverview } from "./widget/Overview"
 
 app.start({
   instanceName: "cobalt",
@@ -16,7 +19,16 @@ app.start({
   // `ags request -i cobalt toggle <menu> [sub-menu]` opens/closes a panel menu
   requestHandler(argv: string[], response: (response: string) => void) {
     const [command, name, subMenu] = argv
-    if (command === "css") {
+    if (command === "shortcuts") {
+      toggleShortcuts()
+      response("ok")
+    } else if (command === "overview") {
+      // `overview` toggles the window overview, `overview apps` the app grid,
+      // `overview search <text>` opens it with a search typed in (for QA)
+      if (name === "search") searchOverview(argv.slice(2).join(" "))
+      else toggleOverview(name === "apps" ? "apps" : "windows")
+      response("ok")
+    } else if (command === "css") {
       // Dev: try CSS live, e.g. ags request -i cobalt css "button { color: red; }"
       app.apply_css(argv.slice(1).join(" "))
       response("ok")
@@ -35,6 +47,9 @@ app.start({
     MenuBackdrop()
     DateMenu()
     QuickSettings()
+    Overview()
+    HotEdge()
+    Shortcuts()
 
     return (
       <For each={monitors}>

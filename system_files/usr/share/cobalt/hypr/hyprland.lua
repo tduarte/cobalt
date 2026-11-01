@@ -38,8 +38,9 @@ local in_vm = is_vm()
 -- ghostty's OpenGL renderer garbles its output on virgl; use software GL in the VM
 local terminal    = in_vm and "env LIBGL_ALWAYS_SOFTWARE=1 ghostty" or "ghostty"
 local fileManager = "nautilus --new-window"
--- Temporary until the AGS overview/launcher (M3/M4)
-local launcher    = "pkill -x fuzzel || fuzzel --config /usr/share/cobalt/fuzzel/fuzzel.ini"
+-- Activities overview and app grid (the AGS shell)
+local overview    = "ags request -i cobalt overview"
+local appGrid     = "ags request -i cobalt overview apps"
 local lock        = "loginctl lock-session"
 
 
@@ -214,60 +215,61 @@ hl.gesture({
 ---- KEYBINDINGS ----
 ---------------------
 
--- GNOME-flavored; see docs/BRIEF.md. Super alone opens the launcher (the
--- Activities overview in M4).
+-- GNOME-flavored; see docs/BRIEF.md. Super alone opens the Activities overview.
+-- `desc` is "Category: Label"; the shortcut cheat sheet (Super+/) is generated
+-- from these, so every bind worth knowing gets one. Binds without desc (media
+-- keys) are left off the sheet.
 local mainMod = "SUPER"
 
-hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(launcher), { release = true, desc = "Activities / launcher" })
-hl.bind(mainMod .. " + A", hl.dsp.exec_cmd(launcher), { desc = "App launcher" })
-hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal), { desc = "Terminal" })
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { desc = "Files" })
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(lock), { desc = "Lock screen" })
-hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("ags request -i cobalt toggle date-menu"), { desc = "Notifications" })
+hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(overview), { release = true, desc = "System: Activities overview" })
+hl.bind(mainMod .. " + A", hl.dsp.exec_cmd(appGrid), { desc = "System: Show apps" })
+hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal), { desc = "System: Terminal" })
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { desc = "System: Files" })
+hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("ags request -i cobalt toggle date-menu"), { desc = "System: Notifications" })
+hl.bind(mainMod .. " + slash", hl.dsp.exec_cmd("ags request -i cobalt shortcuts"), { desc = "System: Keyboard shortcuts" })
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(lock), { desc = "System: Lock screen" })
+hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit(), { desc = "System: Log out" })
 
-hl.bind(mainMod .. " + Q", hl.dsp.window.close(), { desc = "Close window" })
-hl.bind("ALT + F4", hl.dsp.window.close(), { desc = "Close window" })
-hl.bind(mainMod .. " + Up", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }), { desc = "Maximize" })
-hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }), { desc = "Toggle floating" })
-hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { desc = "Fullscreen" })
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"), { desc = "Toggle split direction" })
+-- Screenshots (saved to ~/Pictures/Screenshots and copied)
+hl.bind("Print",         hl.dsp.exec_cmd("cobalt-screenshot area"),   { desc = "System: Screenshot area" })
+hl.bind("SHIFT + Print", hl.dsp.exec_cmd("cobalt-screenshot screen"), { desc = "System: Screenshot screen" })
 
--- Focus and move windows
-for key, dir in pairs({ Left = "left", Right = "right", Down = "down" }) do
-    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ direction = dir }))
-end
-for key, dir in pairs({ Left = "left", Right = "right", Up = "up", Down = "down" }) do
-    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ direction = dir }))
-end
+hl.bind(mainMod .. " + Q", hl.dsp.window.close(), { desc = "Windows: Close window" })
+hl.bind("ALT + F4", hl.dsp.window.close(), { desc = "Windows: Close window" })
+hl.bind(mainMod .. " + Up", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }), { desc = "Windows: Maximize" })
+hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { desc = "Windows: Fullscreen" })
+hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }), { desc = "Windows: Toggle floating" })
+hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"), { desc = "Windows: Toggle split direction" })
 
 -- Alt+Tab cycles windows on the current workspace
 hl.bind("ALT + Tab", function()
     hl.dispatch(hl.dsp.window.cycle_next())
     hl.dispatch(hl.dsp.window.bring_to_top())
-end, { desc = "Switch windows" })
+end, { desc = "Windows: Switch windows" })
+
+-- Focus and move windows (Super+Up is maximize, as in GNOME)
+for key, dir in pairs({ Left = "left", Right = "right", Down = "down" }) do
+    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ direction = dir }), { desc = "Windows: Move focus" })
+end
+for key, dir in pairs({ Left = "left", Right = "right", Up = "up", Down = "down" }) do
+    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ direction = dir }), { desc = "Windows: Move window" })
+end
+
+-- Move/resize with Super + left/right drag
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true, desc = "Windows: Move window" })
+hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, desc = "Windows: Resize window" })
 
 -- Workspaces: Super+1..9, Super+Page Up/Down, Super+scroll
 for i = 1, 9 do
-    hl.bind(mainMod .. " + " .. i,          hl.dsp.focus({ workspace = i }))
-    hl.bind(mainMod .. " + SHIFT + " .. i,  hl.dsp.window.move({ workspace = i }))
+    hl.bind(mainMod .. " + " .. i,          hl.dsp.focus({ workspace = i }),       { desc = "Workspaces: Go to workspace" })
+    hl.bind(mainMod .. " + SHIFT + " .. i,  hl.dsp.window.move({ workspace = i }), { desc = "Workspaces: Move window to workspace" })
 end
-hl.bind(mainMod .. " + Page_Down",         hl.dsp.focus({ workspace = "r+1" }))
-hl.bind(mainMod .. " + Page_Up",           hl.dsp.focus({ workspace = "r-1" }))
-hl.bind(mainMod .. " + SHIFT + Page_Down", hl.dsp.window.move({ workspace = "r+1" }))
-hl.bind(mainMod .. " + SHIFT + Page_Up",   hl.dsp.window.move({ workspace = "r-1" }))
-hl.bind(mainMod .. " + mouse_down",        hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mainMod .. " + mouse_up",          hl.dsp.focus({ workspace = "e-1" }))
-
--- Move/resize with Super + left/right drag
-hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
-hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
-
--- Screenshots (saved to ~/Pictures/Screenshots and copied)
-hl.bind("Print",         hl.dsp.exec_cmd("cobalt-screenshot area"),   { desc = "Screenshot area" })
-hl.bind("SHIFT + Print", hl.dsp.exec_cmd("cobalt-screenshot screen"), { desc = "Screenshot screen" })
-
--- Log out (also in the quick settings power menu)
-hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit(), { desc = "Log out" })
+hl.bind(mainMod .. " + Page_Up",           hl.dsp.focus({ workspace = "r-1" }),       { desc = "Workspaces: Previous workspace" })
+hl.bind(mainMod .. " + Page_Down",         hl.dsp.focus({ workspace = "r+1" }),       { desc = "Workspaces: Next workspace" })
+hl.bind(mainMod .. " + SHIFT + Page_Up",   hl.dsp.window.move({ workspace = "r-1" }), { desc = "Workspaces: Move window to previous workspace" })
+hl.bind(mainMod .. " + SHIFT + Page_Down", hl.dsp.window.move({ workspace = "r+1" }), { desc = "Workspaces: Move window to next workspace" })
+hl.bind(mainMod .. " + mouse_down",        hl.dsp.focus({ workspace = "e+1" }),       { desc = "Workspaces: Scroll through workspaces" })
+hl.bind(mainMod .. " + mouse_up",          hl.dsp.focus({ workspace = "e-1" }),       { desc = "Workspaces: Scroll through workspaces" })
 
 -- Media and brightness keys
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
@@ -332,8 +334,9 @@ for _, class in ipairs({
     hl.window_rule({ match = { class = class }, float = true })
 end
 
-hl.layer_rule({ name = "launcher-blur", match = { namespace = "^launcher$" }, blur = true, ignore_alpha = 0.2 })
--- Shell surfaces: blur behind the translucent bar and its menus (popups)
+-- Shell surfaces: blur behind the translucent bar, menus and the overview
+hl.layer_rule({ name = "overview-blur", match = { namespace = "^cobalt-overview$" }, blur = true })
+hl.layer_rule({ name = "menu-blur", match = { namespace = "^cobalt-menu$" }, blur = true, ignore_alpha = 0.2 })
 hl.layer_rule({ name = "bar-blur", match = { namespace = "^cobalt-bar$" }, blur = true, blur_popups = true, ignore_alpha = 0.2 })
 hl.layer_rule({ name = "notifications-blur", match = { namespace = "^cobalt-notifications$" }, blur = true, ignore_alpha = 0.2 })
 

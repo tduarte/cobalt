@@ -175,6 +175,13 @@ Hard-won facts:
 - **Round buttons need `valign={Gtk.Align.CENTER}`** (and equal min
   width/height); in a taller row they stretch vertically and hover becomes an
   oval.
+- **A fully transparent layer surface is never mapped** (it doesn't show up
+  in `hyprctl layers` at any size). Invisible strips like the Hot Edge need a
+  sliver of alpha (`rgba(0,0,0,0.01)`).
+- Window thumbnails: `grim -T <stableId>` captures one window (~40 ms);
+  `stableId` comes from `hyprctl clients -j` (the window address doesn't work).
+- Pointer-driven features can be tested over SSH by warping the cursor:
+  `hyprctl dispatch 'hl.dsp.cursor.move({ x = 640, y = 799 })'`.
 - Only one menu is open at a time (`lib/menus.ts` state); a backdrop window
   covers the work area *below* the bar so outside clicks close the menu but
   bar buttons still work.
