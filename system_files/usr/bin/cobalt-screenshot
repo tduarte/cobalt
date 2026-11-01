@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+# Screenshot helper for the Print bindings: `area` (select with the mouse) or
+# `screen` (focused monitor). Copies to the clipboard and saves to
+# ~/Pictures/Screenshots, like GNOME.
+
+set -euo pipefail
+
+dir="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Screenshots"
+mkdir -p "$dir"
+file="$dir/Screenshot From $(date '+%Y-%m-%d %H-%M-%S').png"
+
+case "${1:-area}" in
+    area)
+        geometry="$(slurp)" || exit 0
+        grim -g "$geometry" "$file"
+        ;;
+    screen)
+        monitor="$(hyprctl activeworkspace -j | jq -r '.monitor')"
+        grim -o "$monitor" "$file"
+        ;;
+    *)
+        echo "usage: cobalt-screenshot [area|screen]" >&2
+        exit 2
+        ;;
+esac
+
+wl-copy --type image/png < "$file"

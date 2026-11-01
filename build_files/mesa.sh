@@ -1,5 +1,8 @@
 #!/bin/bash
-# Valve-patched Mesa, Xwayland and WirePlumber from Terra, as Bazzite ships them.
+# Valve-patched Mesa and WirePlumber from Terra, as Bazzite ships them.
+# Xwayland stays Fedora's: Hyprland requires xorg-x11-server-Xwayland(x86-64),
+# which terra-xorg-x11-server-Xwayland doesn't provide, and Bazzite's Xwayland
+# patches target the gamescope Gaming Mode session we don't use.
 
 set -ouex pipefail
 
@@ -10,12 +13,9 @@ dnf5 -y remove mesa-va-drivers || true
 dnf5 -y --enable-repo=terra-mesa distro-sync --allowerasing 'mesa-*'
 
 dnf5 -y swap --allowerasing --repo terra-extras \
-    xorg-x11-server-Xwayland terra-xorg-x11-server-Xwayland
-dnf5 -y swap --allowerasing --repo terra-extras \
     wireplumber terra-wireplumber
 
 dnf5 versionlock add \
-    terra-xorg-x11-server-Xwayland \
     mesa-dri-drivers \
     mesa-filesystem \
     mesa-libEGL \

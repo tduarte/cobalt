@@ -1,0 +1,15 @@
+# Defaults the Settings app will later manage. libadwaita apps read these
+# through xdg-desktop-portal-gtk's settings portal.
+[org.gnome.desktop.interface]
+color-scheme='prefer-dark'
+accent-color='blue'
+gtk-theme='adw-gtk3-dark'
+icon-theme='Adwaita'
+cursor-theme='Adwaita'
+cursor-size=24
+font-name='Adwaita Sans 11'
+document-font-name='Adwaita Sans 11'
+monospace-font-name='Adwaita Mono 11'
+
+[org.gnome.desktop.wm.preferences]
+button-layout='appmenu:close'

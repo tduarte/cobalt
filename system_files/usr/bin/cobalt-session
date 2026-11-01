@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+# GDM session entry point. The system config in /usr/share/cobalt/hypr/ comes
+# with the image; personal overrides go in ~/.config/cobalt/hyprland.lua, which
+# the system config loads last.
+
+exec /usr/bin/start-hyprland -- --config /usr/share/cobalt/hypr/hyprland.lua

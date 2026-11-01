@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Cobalt
+Comment=Hyprland with the cobalt shell
+Exec=/usr/bin/cobalt-session
+Type=Application
+DesktopNames=Hyprland
+Keywords=tiling;wayland;compositor;hyprland;

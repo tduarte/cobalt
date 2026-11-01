@@ -10,10 +10,14 @@ FROM ghcr.io/ublue-os/akmods:ogc-${FEDORA_VERSION}${KERNEL_VERSION:+-${KERNEL_VE
 FROM ghcr.io/ublue-os/akmods-extra:ogc-${FEDORA_VERSION}${KERNEL_VERSION:+-${KERNEL_VERSION}} AS akmods-extra
 FROM ghcr.io/ublue-os/brew:latest AS brew
 
-# Allow build scripts to be referenced without being copied into the final image
+# Allow build scripts to be referenced without being copied into the final image.
+# system_files/ is its own stage so editing a config only invalidates the step
+# that copies it, not every step that mounts the build scripts.
 FROM scratch AS ctx
 COPY build_files /
-COPY system_files /system_files
+
+FROM scratch AS sysfiles
+COPY system_files /
 
 # Base Image
 ## Universal Blue's desktop-less base: Fedora Atomic + codecs + ublue tooling.
@@ -65,6 +69,14 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/dev.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
+    --mount=type=tmpfs,dst=/tmp \
+    /ctx/desktop.sh
+
+## system_files/ last among the package steps, so config-only changes rebuild fast
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=bind,from=sysfiles,source=/,target=/sysfiles \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \

@@ -489,7 +489,49 @@ vm-start:
 vm-stop:
     flatpak run --command=virsh org.gnome.Boxes -c qemu:///session shutdown "{{ dev_vm }}"
 
-# SSH into the dev VM (forwarded on 127.0.0.1:2222)
+# SSH into the dev VM (forwarded on 127.0.0.1:2222). Arguments are passed as-is
+# to ssh, so a quoted command runs entirely in the VM, pipes included.
 [group('Dev VM')]
+[positional-arguments]
 vm-ssh *args:
-    ssh -i "$HOME/.ssh/cobalt-vm" -p 2222 -o UserKnownHostsFile="$HOME/.ssh/known_hosts.cobalt-vm" "$USER@127.0.0.1" {{ args }}
+    @ssh -i "$HOME/.ssh/cobalt-vm" -p 2222 -o UserKnownHostsFile="$HOME/.ssh/known_hosts.cobalt-vm" "$USER@127.0.0.1" "$@"
+
+# Local registry the dev VM pulls from (reachable in the VM as 10.0.2.2:5000)
+[group('Dev VM')]
+registry:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if podman container exists cobalt-registry; then
+        podman start cobalt-registry >/dev/null
+    else
+        podman run -d --name cobalt-registry -p 127.0.0.1:5000:5000 \
+            -v cobalt-registry:/var/lib/registry docker.io/library/registry:2 >/dev/null
+    fi
+    echo "cobalt-registry running on 127.0.0.1:5000"
+
+# Build the image and push it to the local registry as cobalt:dev
+[group('Dev VM')]
+vm-push: registry
+    just build {{ image_name }} dev
+    podman push --tls-verify=false localhost/{{ image_name }}:dev 127.0.0.1:5000/{{ image_name }}:dev
+
+# A guest reboot with GL on crashes QEMU's SPICE (gl_draw_cookie assertion),
+# so power off and cold-start instead.
+# Point the VM at the local cobalt:dev image (first time) or pull the latest, then restart it
+[group('Dev VM')]
+vm-update:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    target="10.0.2.2:5000/{{ image_name }}:dev"
+    just vm-ssh "sudo mkdir -p /etc/containers/registries.conf.d && printf '[[registry]]\nlocation = \"10.0.2.2:5000\"\ninsecure = true\n' | sudo tee /etc/containers/registries.conf.d/50-cobalt-dev.conf >/dev/null"
+    if just vm-ssh "sudo bootc status --format=json" | grep -q "$target"; then
+        just vm-ssh "sudo bootc upgrade"
+    else
+        just vm-ssh "sudo bootc switch $target"
+    fi
+    just vm-ssh "sudo systemctl poweroff" || true
+    for _ in $(seq 1 60); do
+        [ "$(flatpak run --command=virsh org.gnome.Boxes -c qemu:///session domstate "{{ dev_vm }}" | head -1)" = "shut off" ] && break
+        sleep 2
+    done
+    just vm-start

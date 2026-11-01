@@ -1,10 +1,12 @@
 #!/bin/bash
+# Copy the repo's system_files/ into the image (configs, scripts, session).
+# Packages are installed by the other scripts in build_files/.
 
 set -ouex pipefail
 
-# Copy the contents of system_files/ of the git repo to /
-cp -avf "/ctx/system_files"/. /
+# Copy the repo's system_files/ (mounted at /sysfiles) to /
+cp -avf /sysfiles/. /
+rm -f /etc/.gitkeep /usr/.gitkeep
 
-### Install packages
-# Gaming stack (kernel, Mesa, Steam, gamescope) and Hyprland get added here
-# as separate scripts.
+# Apply the GNOME settings defaults in zz1-cobalt.gschema.override
+glib-compile-schemas /usr/share/glib-2.0/schemas

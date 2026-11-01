@@ -18,6 +18,10 @@ Universal Blue key enrolled.
   - Valve-patched Mesa from Terra (`terra-mesa`), Fedora's Mesa excluded
   - `terra-gamescope`, Steam from Terra
   - `scx-scheds` / `scx-tools`
+  - Kmods: only `v4l2loopback` and `zenergy` (what this hardware uses)
+  - Xwayland stays Fedora's, not Terra's: Hyprland needs the arch-tagged
+    `xorg-x11-server-Xwayland(x86-64)` that Terra's doesn't provide, and
+    Bazzite's Xwayland patches target the gamescope Gaming Mode session
   - Firmware, udev rules and helpers from `ublue-os/bazzite` and
     `ublue-os/packages` COPRs, chosen package by package
 - Also in the image: ROCm (`rocm-hip`, `rocm-runtime`), ghostty, distrobox,
@@ -28,15 +32,21 @@ Universal Blue key enrolled.
 
 ## Session
 
-- Login: **GDM**. Its greeter is gnome-shell, so gnome-shell and mutter are in
-  the image, but there is no GNOME session.
-- Compositor: **Hyprland**, **dwindle** layout by default.
+- Login: **GDM**. Its greeter is gnome-shell, so gnome-shell, mutter and
+  gnome-session are in the image (hard dependencies), but the GNOME session
+  entry is removed: GDM only offers **Cobalt**.
+- Compositor: **Hyprland** from the `pm4rcin/Hyprland` COPR (maintained fork of
+  solopasha's; Fedora 44 itself doesn't ship Hyprland), **dwindle** layout.
 - Portals: `xdg-desktop-portal-hyprland` (screenshots, screencast) and
   `xdg-desktop-portal-gtk` (file chooser, settings/appearance).
-- Hyprland reads system defaults from `/usr/share/cobalt/hypr/`. The user's
-  config only sources them and adds overrides, so image updates still reach
-  existing users. Hyprland has moved to a Lua config (`hyprland.lua`), so
-  check the current format before writing it.
+- Config is **Lua** (Hyprland 0.55+). `cobalt.desktop` runs
+  `cobalt-session` → `start-hyprland -- --config /usr/share/cobalt/hypr/hyprland.lua`.
+  The system config loads `~/.config/cobalt/hyprland.lua` last for personal
+  overrides, so image updates still reach existing users.
+  - API reference: `/usr/share/hypr/stubs/hl.meta.lua` in the image.
+  - Validate with `Hyprland --verify-config -c <file>` (as a normal user).
+- hypridle/hyprlock still use the classic hyprlang format; their configs are
+  in `/usr/share/cobalt/hypr/` too and are passed by path.
 
 ## Shell: AGS v3 + Astal (TypeScript, GTK4)
 
@@ -56,7 +66,7 @@ libraries with the shell.
 | App | What it does |
 |---|---|
 | Settings | GNOME Settings-like app (`AdwNavigationSplitView` + preference pages). Writes the same GSettings keys GNOME uses (`org.gnome.desktop.interface`: color scheme, accent color, fonts), so every libadwaita app follows it through the settings portal. |
-| Activities overview | Super opens open windows and workspaces plus app search. |
+| Activities overview | Super opens open windows and workspaces plus app search. **Hot Edge** (like the GNOME extension): pushing the mouse against the bottom edge opens it too, via a thin invisible layer-shell strip. |
 | Quick settings | GNOME's top-right menu: Wi-Fi, Bluetooth, volume, brightness, dark mode, power. |
 | Shortcut cheat sheet | Overlay listing all keybindings, generated from the Hyprland config. |
 | Welcome | First-boot app: Flatpak picks, Secure Boot key enrollment, dotfiles, basics of tiling. |
@@ -105,8 +115,14 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 
 ## Development setup
 
-- Image changes: commit → GitHub Actions builds and signs
-  `ghcr.io/tduarte/cobalt` → `bootc upgrade` in the VM.
+- Day-to-day image changes stay local: `just vm-push` builds and pushes
+  `cobalt:dev` to the `cobalt-registry` podman container (127.0.0.1:5000,
+  `10.0.2.2:5000` from the VM), then `just vm-update` switches/upgrades the
+  VM and reboots it. Only changed layers move.
+- Config-only tweaks skip the image: copy the file into the VM over SSH and
+  reload Hyprland.
+- GitHub Actions builds and signs `ghcr.io/tduarte/cobalt` when a milestone is
+  pushed (and nightly); that's what real installs follow.
 - VM: GNOME Boxes VM `silverblue43`, switched to cobalt with `bootc switch`.
   Start it with `just vm-start` (not Boxes' play button), then open it in
   Boxes to view; `just vm-ssh` / `just vm-stop` for the rest.
@@ -128,7 +144,7 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 2. Desktop basics: Hyprland, GDM, portals, Nautilus, default config,
    keybindings.
 3. AGS top bar and quick settings.
-4. Activities overview and shortcut cheat sheet.
+4. Activities overview (with Hot Edge) and shortcut cheat sheet.
 5. Settings app.
 6. Welcome app.
 7. Switch the main PC with `bootc switch` (rollback to Bazzite available).

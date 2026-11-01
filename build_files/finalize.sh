@@ -6,7 +6,7 @@ set -ouex pipefail
 for repo in terra terra-extras terra-mesa; do
     [[ -f /etc/yum.repos.d/$repo.repo ]] && sed -i 's@enabled=1@enabled=0@g' "/etc/yum.repos.d/$repo.repo"
 done
-for copr in ublue-os/bazzite ublue-os/bazzite-multilib ublue-os/packages scottames/ghostty; do
+for copr in ublue-os/bazzite ublue-os/bazzite-multilib ublue-os/packages scottames/ghostty pm4rcin/Hyprland; do
     dnf5 -y copr disable "$copr"
 done
 
