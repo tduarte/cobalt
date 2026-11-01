@@ -10,14 +10,34 @@ FROM ghcr.io/ublue-os/akmods:ogc-${FEDORA_VERSION}${KERNEL_VERSION:+-${KERNEL_VE
 FROM ghcr.io/ublue-os/akmods-extra:ogc-${FEDORA_VERSION}${KERNEL_VERSION:+-${KERNEL_VERSION}} AS akmods-extra
 FROM ghcr.io/ublue-os/brew:latest AS brew
 
-# Allow build scripts to be referenced without being copied into the final image.
-# system_files/ is its own stage so editing a config only invalidates the step
-# that copies it, not every step that mounts the build scripts.
-FROM scratch AS ctx
-COPY build_files /
+# Build scripts and files are mounted into the steps that use them, never copied
+# into the image. Each step gets its own stage holding only its script(s), so
+# editing one script reruns that step and the ones after it, not every step.
+FROM scratch AS kernel-step
+COPY build_files/kernel.sh /
 
-FROM scratch AS sysfiles
-COPY system_files /
+FROM scratch AS mesa-step
+COPY build_files/repos.sh build_files/mesa.sh /
+
+FROM scratch AS gaming-step
+COPY build_files/gaming.sh /
+
+FROM scratch AS dev-step
+COPY build_files/dev.sh /
+
+FROM scratch AS desktop-step
+COPY build_files/desktop.sh /
+
+FROM scratch AS shell-step
+COPY build_files/shell.sh /
+COPY shell /shell
+
+FROM scratch AS files-step
+COPY build_files/build.sh /
+COPY system_files /system_files
+
+FROM scratch AS finalize-step
+COPY build_files/finalize.sh /
 
 # Base Image
 ## Universal Blue's desktop-less base: Fedora Atomic + codecs + ublue tooling.
@@ -40,7 +60,7 @@ FROM ghcr.io/ublue-os/base-main:${FEDORA_VERSION}
 
 COPY --from=brew /system_files/ /
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+RUN --mount=type=bind,from=kernel-step,source=/,target=/ctx \
     --mount=type=bind,from=akmods,src=/kernel-rpms,dst=/tmp/kernel-rpms \
     --mount=type=bind,from=akmods,src=/rpms/common,dst=/tmp/rpms/common \
     --mount=type=bind,from=akmods,src=/rpms/kmods,dst=/tmp/rpms/kmods \
@@ -50,39 +70,44 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/log \
     /ctx/kernel.sh
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+RUN --mount=type=bind,from=mesa-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/repos.sh && /ctx/mesa.sh
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+RUN --mount=type=bind,from=gaming-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/gaming.sh
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+RUN --mount=type=bind,from=dev-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/dev.sh
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+RUN --mount=type=bind,from=desktop-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/desktop.sh
 
+RUN --mount=type=bind,from=shell-step,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
+    --mount=type=tmpfs,dst=/tmp \
+    /ctx/shell.sh
+
 ## system_files/ last among the package steps, so config-only changes rebuild fast
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=bind,from=sysfiles,source=/,target=/sysfiles \
+RUN --mount=type=bind,from=files-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build.sh
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+RUN --mount=type=bind,from=finalize-step,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \

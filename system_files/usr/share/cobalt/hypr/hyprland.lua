@@ -54,6 +54,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("hypridle --config /usr/share/cobalt/hypr/hypridle.conf")
     hl.exec_cmd("wl-paste --watch cliphist store")
+    -- Top bar, menus and notifications (AGS, shell/ in the repo)
+    hl.exec_cmd("cobalt-shell")
 end)
 
 
@@ -61,7 +63,7 @@ end)
 ---- ENVIRONMENT VARIABLES ----
 -------------------------------
 
-hl.env("XCURSOR_THEME", "Adwaita")
+hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("QT_QPA_PLATFORM", "wayland;xcb")
@@ -221,6 +223,7 @@ hl.bind(mainMod .. " + A", hl.dsp.exec_cmd(launcher), { desc = "App launcher" })
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal), { desc = "Terminal" })
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { desc = "Files" })
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(lock), { desc = "Lock screen" })
+hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("ags request -i cobalt toggle date-menu"), { desc = "Notifications" })
 
 hl.bind(mainMod .. " + Q", hl.dsp.window.close(), { desc = "Close window" })
 hl.bind("ALT + F4", hl.dsp.window.close(), { desc = "Close window" })
@@ -263,7 +266,7 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 hl.bind("Print",         hl.dsp.exec_cmd("cobalt-screenshot area"),   { desc = "Screenshot area" })
 hl.bind("SHIFT + Print", hl.dsp.exec_cmd("cobalt-screenshot screen"), { desc = "Screenshot screen" })
 
--- Log out (until the quick settings power menu in M3)
+-- Log out (also in the quick settings power menu)
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit(), { desc = "Log out" })
 
 -- Media and brightness keys
@@ -330,6 +333,9 @@ for _, class in ipairs({
 end
 
 hl.layer_rule({ name = "launcher-blur", match = { namespace = "^launcher$" }, blur = true, ignore_alpha = 0.2 })
+-- Shell surfaces: blur behind the translucent bar and its menus (popups)
+hl.layer_rule({ name = "bar-blur", match = { namespace = "^cobalt-bar$" }, blur = true, blur_popups = true, ignore_alpha = 0.2 })
+hl.layer_rule({ name = "notifications-blur", match = { namespace = "^cobalt-notifications$" }, blur = true, ignore_alpha = 0.2 })
 
 
 -----------------------

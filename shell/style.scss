@@ -1,0 +1,501 @@
+@use "sass:color";
+
+// GNOME Shell look on top of Adwaita (dark). Colors follow GNOME's palette;
+// the accent will come from the Settings app (M5).
+$accent: #3584e4;
+$fg: #ffffff;
+$fg-dim: rgba(255, 255, 255, 0.7);
+$panel-bg: rgba(0, 0, 0, 0.72);
+$menu-bg: #2e2e32;
+$card-bg: rgba(255, 255, 255, 0.08);
+$hover: rgba(255, 255, 255, 0.12);
+$pressed: rgba(255, 255, 255, 0.2);
+
+* {
+  font-family: "Adwaita Sans", sans-serif;
+}
+
+// Adwaita paints buttons and slider knobs with a background-image layer on top
+// of background-color, so our colors only showed at the corners. Clear it for
+// everything we style.
+window.bar button,
+window.notification-banners button,
+.panel-menu button,
+.panel-menu scale > trough > slider,
+.panel-menu switch > slider {
+  background-image: none;
+  border: none;
+  box-shadow: none;
+}
+
+// Layer-shell windows are transparent; their content draws the background
+window.bar,
+window.notification-banners,
+window.panel-menu-window,
+window.menu-backdrop {
+  background: transparent;
+}
+
+// ---- Top bar ----
+
+.bar-content {
+  background-color: $panel-bg;
+  min-height: 32px;
+  color: $fg;
+  font-size: 11pt;
+  font-weight: bold;
+}
+
+// menubuttons wrap a real button; style both the same
+.panel-button,
+menubutton.panel-button > button {
+  color: $fg;
+  background: transparent;
+  border-radius: 999px;
+  padding: 0 12px;
+  margin: 3px 1px;
+  min-height: 24px;
+  box-shadow: none;
+  border: none;
+  transition: background-color 150ms ease;
+}
+
+menubutton.panel-button {
+  padding: 0;
+  margin: 0;
+}
+
+.panel-button:hover,
+menubutton.panel-button > button:hover {
+  background-color: $hover;
+}
+
+.panel-button:active,
+.panel-button.active,
+menubutton.panel-button > button:checked {
+  background-color: $pressed;
+}
+
+// Activities: one dot per workspace, the focused one stretched into a pill
+.activities {
+  padding: 0 14px;
+}
+
+.workspace-dots .dot {
+  min-width: 7px;
+  min-height: 7px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.45);
+  transition: min-width 250ms ease-out, background-color 250ms ease-out;
+
+  &.active {
+    min-width: 32px;
+    background-color: $fg;
+  }
+}
+
+// GNOME's orange privacy indicators (microphone in use)
+.privacy-indicator {
+  color: #ff7800;
+}
+
+.dnd-indicator {
+  -gtk-icon-size: 14px;
+}
+
+.tray-item > button {
+  padding: 0 8px;
+}
+
+// ---- Menus (date menu, quick settings) ----
+
+.panel-menu {
+  background-color: $menu-bg;
+  color: $fg;
+  border-radius: 24px;
+  padding: 16px;
+  // Room inside the menu window for the drop shadow
+  margin: 6px 8px 24px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  font-weight: normal;
+}
+
+button.pill {
+  border-radius: 999px;
+  padding: 6px 16px;
+  background-color: $card-bg;
+}
+
+// Date menu
+.date-heading {
+  color: $fg-dim;
+  font-weight: bold;
+}
+
+.date-big {
+  font-size: 15pt;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+// Calendar (custom widget, GNOME-style)
+.calendar {
+  margin-top: 10px;
+
+  .calendar-header {
+    margin-bottom: 6px;
+
+    button.nav,
+    button.month {
+      border-radius: 999px;
+      background: transparent;
+      min-height: 32px;
+
+      &:hover {
+        background-color: $hover;
+      }
+    }
+
+    button.nav {
+      min-width: 32px;
+      min-height: 32px;
+      padding: 0;
+    }
+
+    button.month {
+      font-weight: bold;
+      background-color: transparent;
+
+      &:hover {
+        background-color: $hover;
+      }
+    }
+  }
+
+  .weekday {
+    color: $fg-dim;
+    font-size: 9pt;
+    font-weight: bold;
+    margin: 6px 0;
+  }
+
+  button.day {
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: $fg;
+    font-weight: bold;
+
+    &:hover {
+      background-color: $hover;
+    }
+
+    &.weekend {
+      color: $fg-dim;
+      font-weight: normal;
+    }
+
+    &.other-month {
+      color: rgba(255, 255, 255, 0.35);
+      font-weight: normal;
+    }
+
+    &.today {
+      background-color: $accent;
+      color: $fg;
+      font-weight: bold;
+    }
+
+    &.selected {
+      box-shadow: inset 0 0 0 2px rgba(120, 174, 237, 0.8);
+    }
+  }
+}
+
+// Media players
+.media-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 12px 14px;
+
+  .app-name {
+    color: $fg-dim;
+    font-weight: bold;
+  }
+
+  .cover {
+    min-width: 60px;
+    min-height: 60px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .title {
+    font-weight: bold;
+  }
+
+  .controls button {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 999px;
+    background: transparent;
+
+    &:hover {
+      background-color: $hover;
+    }
+  }
+}
+
+.no-notifications {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: bold;
+}
+
+.list-footer {
+  margin-top: 4px;
+}
+
+// Quick settings (GNOME 48 layout)
+.panel-menu.quick-settings {
+  border-radius: 28px;
+  padding: 18px;
+}
+
+.system-row button.icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  background-color: $card-bg;
+
+  &:hover {
+    background-color: $hover;
+  }
+
+  &.active {
+    background-color: $pressed;
+  }
+}
+
+.qs-slider {
+  min-height: 40px;
+
+  button.slider-icon,
+  button.slider-arrow,
+  image.slider-icon {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 999px;
+    background: transparent;
+
+    &:hover {
+      background-color: $hover;
+    }
+  }
+
+  scale {
+    // Room for the knob at 0% and 100%
+    padding: 12px 12px;
+
+    > trough {
+      min-height: 6px;
+      border-radius: 999px;
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    > trough > highlight {
+      border-radius: 999px;
+      background-color: $accent;
+    }
+
+    > trough > slider {
+      min-width: 22px;
+      min-height: 22px;
+      margin: -8px;
+      border-radius: 999px;
+      background-color: #e8e8e8;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+  }
+}
+
+// Toggles: a pill, split into the toggle and an arrow when it has a menu.
+// `button.` prefixes because Adwaita's button rules use :not(), which outranks
+// a bare class selector.
+.qs-toggle {
+  min-height: 56px;
+  border-radius: 999px;
+  background-color: $card-bg;
+  color: $fg;
+
+  button.qs-toggle-main,
+  button.qs-toggle-arrow {
+    min-height: 56px;
+    border-radius: 999px 0 0 999px;
+    background: transparent;
+    color: inherit;
+    padding: 0 0 0 18px;
+
+    &:hover {
+      background-color: $hover;
+    }
+  }
+
+  button.qs-toggle-main.solo {
+    border-radius: 999px;
+  }
+
+  button.qs-toggle-arrow {
+    border-radius: 0 999px 999px 0;
+    padding: 0 14px 0 12px;
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .title {
+    font-weight: bold;
+  }
+
+  .subtitle {
+    font-size: 9pt;
+    color: $fg-dim;
+  }
+
+  &.active {
+    background-color: $accent;
+
+    button.qs-toggle-main:hover,
+    button.qs-toggle-arrow:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+
+    button.qs-toggle-arrow {
+      background-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+}
+
+// Inline menus (Wi-Fi networks, sound devices, power modes...)
+.qs-menu-spacer {
+  margin-top: 10px;
+}
+
+.qs-menu {
+  background-color: #48484d;
+  border-radius: 22px;
+  padding: 14px 10px 10px 10px;
+
+  .qs-menu-header {
+    margin: 0 8px 6px 4px;
+  }
+
+  .qs-menu-icon {
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.12);
+
+    &.active {
+      background-color: $accent;
+    }
+  }
+
+  .qs-menu-title {
+    font-size: 15pt;
+    font-weight: bold;
+  }
+
+  button.qs-menu-item {
+    border-radius: 12px;
+    padding: 9px 12px;
+    background: transparent;
+    color: $fg;
+    font-weight: normal;
+
+    &:hover {
+      background-color: $hover;
+    }
+  }
+
+  .qs-menu-empty {
+    color: $fg-dim;
+    padding: 8px 12px;
+  }
+
+  .qs-password entry,
+  .qs-password text {
+    border-radius: 12px;
+  }
+
+  separator {
+    margin: 6px 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+// ---- Notifications ----
+
+.notification-banners {
+  margin-top: 8px;
+}
+
+.notification {
+  background-color: #38383d;
+  color: $fg;
+  border-radius: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  .notification-banners & {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    margin: 0 12px;
+  }
+
+  &.critical {
+    border: 1px solid rgba(224, 27, 36, 0.8);
+  }
+
+  .header {
+    margin-bottom: 6px;
+  }
+
+  .app-name,
+  .time {
+    font-size: 9pt;
+    color: $fg-dim;
+  }
+
+  button.close {
+    min-width: 22px;
+    min-height: 22px;
+    padding: 0;
+    border-radius: 999px;
+    background-color: $card-bg;
+  }
+
+  .picture {
+    border-radius: 10px;
+  }
+
+  .summary {
+    font-weight: bold;
+  }
+
+  .body {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .actions button {
+    margin-top: 8px;
+    border-radius: 999px;
+    background-color: $card-bg;
+  }
+}

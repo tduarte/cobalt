@@ -11,7 +11,31 @@ dnf5 -y install \
     hyprlock \
     hypridle \
     hyprpolkitagent \
-    hyprland-guiutils
+    hyprland-guiutils \
+    hyprsunset
+
+# Shell toolkit: AGS (packaged as aylurs-gtk-shell; Fedora's "ags" is the
+# unrelated Adventure Game Studio) and the Astal service libraries. dart-sass
+# compiles the shell's SCSS when it's bundled. AGS preloads the unversioned
+# libgtk4-layer-shell.so, which only the -devel package provides.
+dnf5 -y install \
+    aylurs-gtk-shell \
+    dart-sass \
+    gjs \
+    gtk4-layer-shell-devel \
+    libadwaita \
+    libastal-4 \
+    libastal-io \
+    libastal-apps \
+    libastal-battery \
+    libastal-bluetooth \
+    libastal-hyprland \
+    libastal-mpris \
+    libastal-network \
+    libastal-notifd \
+    libastal-powerprofiles \
+    libastal-tray \
+    libastal-wireplumber
 
 # Login screen, files, portals and keyring
 dnf5 -y install \
@@ -21,7 +45,8 @@ dnf5 -y install \
     xdg-desktop-portal-gtk \
     gnome-keyring
 
-# Screenshots, clipboard, media keys and a temporary launcher (fuzzel is
+# Screenshots, clipboard, media keys, brightness (brightnessctl for laptop
+# panels, ddcutil for external monitors over DDC/CI) and a temporary launcher (fuzzel is
 # replaced by the AGS overview/launcher in M3/M4)
 dnf5 -y install \
     grim \
@@ -29,6 +54,7 @@ dnf5 -y install \
     wl-clipboard \
     cliphist \
     brightnessctl \
+    ddcutil \
     playerctl \
     fuzzel
 
@@ -38,6 +64,15 @@ dnf5 -y install \
     adwaita-icon-theme \
     adwaita-sans-fonts \
     adwaita-mono-fonts
+
+# Icons: Adwair (WhiteSur/Adwaita blend, no RPM; pinned release, blue folders)
+# and Bibata Modern Ice cursors (Terra)
+ADWAIR_VERSION=1.0.0
+curl -fsSL --retry 3 "https://github.com/kusaida/Adwair/archive/refs/tags/v${ADWAIR_VERSION}.tar.gz" \
+    | tar -xz -C /tmp
+bash "/tmp/Adwair-${ADWAIR_VERSION}/install.sh" --path /usr/share/icons
+gtk-update-icon-cache -f /usr/share/icons/Adwair || true
+dnf5 -y install bibata-cursor-theme
 
 # GDM needs gnome-shell and gnome-session for its greeter, which also brings
 # a GNOME session entry; only offer cobalt.desktop (system_files) at login.

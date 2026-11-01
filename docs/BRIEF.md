@@ -66,8 +66,9 @@ libraries with the shell.
 | App | What it does |
 |---|---|
 | Settings | GNOME Settings-like app (`AdwNavigationSplitView` + preference pages). Writes the same GSettings keys GNOME uses (`org.gnome.desktop.interface`: color scheme, accent color, fonts), so every libadwaita app follows it through the settings portal. |
+| Date menu | Media player cards (MPRIS) and notifications on the left with Clear; date heading and a custom GNOME-style calendar on the right. Later: events (Evolution Data Server), world clocks, weather. |
 | Activities overview | Super opens open windows and workspaces plus app search. **Hot Edge** (like the GNOME extension): pushing the mouse against the bottom edge opens it too, via a thin invisible layer-shell strip. |
-| Quick settings | GNOME's top-right menu: Wi-Fi, Bluetooth, volume, brightness, dark mode, power. |
+| Quick settings | GNOME 48's menu: screenshot / lock / power (inline power menu); volume + Sound Output, microphone + Sound Input, brightness (backlight or DDC/CI); toggles Wi-Fi (networks + password), Wired, VPN, Bluetooth (devices), Power Mode, Night Light (hyprsunset), Do Not Disturb, Caffeine, Airplane Mode. Toggles with an arrow open their menu inline below the row, one at a time. Orange mic indicator in the bar while recording. Not yet: Settings gear (M5), Background Apps (no portal on Hyprland), Dark Style (removed by choice). |
 | Shortcut cheat sheet | Overlay listing all keybindings, generated from the Hyprland config. |
 | Welcome | First-boot app: Flatpak picks, Secure Boot key enrollment, dotfiles, basics of tiling. |
 
@@ -89,6 +90,11 @@ libraries with the shell.
 
 Adwaita with extras: Adwaita colors and accent color, rounded corners, small
 gaps, blur and translucency on shell surfaces, livelier animations.
+
+- Icons: [Adwair](https://github.com/kusaida/Adwair) (WhiteSur/Adwaita blend,
+  blue folders), installed from its pinned release. `Adwair-dark` (dark app
+  icons) is also installed. Note: the repo has no license file yet.
+- Cursor: Bibata Modern Ice (Terra's `bibata-cursor-theme`).
 
 ## Keybindings (draft, GNOME-flavored)
 
