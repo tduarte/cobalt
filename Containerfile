@@ -6,8 +6,8 @@ COPY system_files /system_files
 # Base Image
 ## Universal Blue's desktop-less base: Fedora Atomic + codecs + ublue tooling.
 ## Hyprland and Bazzite's gaming stack are layered on top in build_files/.
-## Fedora version is pinned so major upgrades are a deliberate change.
-FROM ghcr.io/ublue-os/base-main:44
+## :latest follows the newest Fedora release (moves to 45 on release day).
+FROM ghcr.io/ublue-os/base-main:latest
 
 ### [IM]MUTABLE /opt
 ## Some bootable images, like Fedora, have /opt symlinked to /var/opt, in order to
