@@ -12,9 +12,14 @@ sum="$(sha256sum "$list" | cut -d' ' -f1)"
 [[ -f "$stamp" && "$(cat "$stamp")" == "$sum" ]] && exit 0
 
 flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-mapfile -t apps < <(grep -Ev '^\s*(#|$)' "$list")
-if ((${#apps[@]})); then
-    flatpak install --system --noninteractive --or-update flathub "${apps[@]}"
+# Only apps that aren't installed at all: one from another remote (Fedora's)
+# or a user install counts, and installing it again would fail the batch
+missing=()
+while read -r app; do
+    flatpak info "$app" >/dev/null 2>&1 || missing+=("$app")
+done < <(grep -Ev '^\s*(#|$)' "$list")
+if ((${#missing[@]})); then
+    flatpak install --system --noninteractive flathub "${missing[@]}"
 fi
 
 mkdir -p "$(dirname "$stamp")"

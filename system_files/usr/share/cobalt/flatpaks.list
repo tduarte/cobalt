@@ -1,3 +1,7 @@
 # Flathub apps cobalt installs system-wide (cobalt-flatpaks.service). Apps
 # removed from this list stay installed; uninstall them by hand.
 io.missioncenter.MissionCenter
+# The date menu's events, world clocks and weather come from these
+org.gnome.Calendar
+org.gnome.clocks
+org.gnome.Weather

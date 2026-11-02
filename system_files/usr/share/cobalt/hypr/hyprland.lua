@@ -439,7 +439,6 @@ for _, class in ipairs({
     "^xdg-desktop-portal-gtk$",
     "^org.gnome.Calculator$",
     "^hyprland-run$",
-    "^hyprpolkitagent$",
 }) do
     hl.window_rule({ match = { class = class }, float = true })
 end

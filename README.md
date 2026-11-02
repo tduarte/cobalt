@@ -38,14 +38,17 @@ The full reasoning, decisions and milestones are in
 
 | | |
 |---|---|
-| ![Date menu with grouped notifications and calendar](docs/screenshots/date-menu.webp) | ![Quick settings](docs/screenshots/quick-settings.webp) |
-| **Date menu:** notifications grouped by app, calendar | **Quick settings:** sound, network, power mode, Night Light, Do Not Disturb |
+| ![Date menu with notifications, calendar, events, world clocks and weather](docs/screenshots/date-menu.webp) | ![Quick settings](docs/screenshots/quick-settings.webp) |
+| **Date menu:** notifications grouped by app, calendar, events, world clocks, weather | **Quick settings:** sound, network, power mode, Night Light, Do Not Disturb |
 | ![Launcher with app grid and dash](docs/screenshots/launcher.webp) | ![Settings app on the Appearance page](docs/screenshots/settings.webp) |
 | **Launcher:** search, GNOME's app grid and folders, dash | **Settings:** a libadwaita app with GNOME Settings' pages |
 | ![Alt+Tab app switcher](docs/screenshots/switcher.webp) | ![Screenshot UI](docs/screenshots/screenshot-ui.webp) |
 | **Alt+Tab:** apps in recently used order | **Screenshot UI:** selection, screen or window; screenshot or screencast |
-| ![Log Out dialog](docs/screenshots/log-out.webp) | ![Keyboard shortcuts](docs/screenshots/shortcuts.webp) |
-| **End session:** apps close first, nothing unsaved is lost | **Keyboard shortcuts** (Super+/), generated from the live config |
+| ![Log Out dialog](docs/screenshots/log-out.webp) | ![Authentication Required dialog](docs/screenshots/authentication.webp) |
+| **End session:** apps close first, nothing unsaved is lost | **Password prompts:** admin (polkit), Wi-Fi and VPN passwords |
+
+![Keyboard shortcuts](docs/screenshots/shortcuts.webp)
+**Keyboard shortcuts** (Super+/), generated from the live config
 
 ## What's in it
 
@@ -54,11 +57,16 @@ The full reasoning, decisions and milestones are in
   indicators (microphone, screen sharing, recording).
 - Quick settings with inline menus: Wi-Fi, wired, VPN, Bluetooth, sound
   devices, power mode, Night Light, Do Not Disturb, Caffeine, background apps.
-- Date menu with media players, notifications grouped by app, and a calendar.
+- Date menu with media players, notifications grouped by app, a calendar,
+  the selected day's events (Evolution Data Server, through GNOME Shell's
+  calendar server), world clocks (GNOME Clocks) and the weather (GNOME
+  Weather's location).
 - Launcher with search, GNOME's app grid and folders, and the dash
   (favorites and running apps); also on the bottom Hot Edge.
 - Alt+Tab app switcher, Log Out / Restart / Power Off dialog, screenshot and
   screencast UI, keyboard shortcut sheet, update notifications.
+- GNOME's password prompts: the polkit agent ("Authentication Required")
+  and NetworkManager's secret agent (Wi-Fi, 802.1X, VPN passwords).
 
 **Settings** (libadwaita, `settings/`)
 - Wi-Fi, Network (wired, VPN, proxy), Bluetooth, Displays (resolution,

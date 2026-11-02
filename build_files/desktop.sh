@@ -11,7 +11,6 @@ dnf5 -y install \
     hyprlock \
     hypridle \
     hyprpaper \
-    hyprpolkitagent \
     hyprland-guiutils \
     hyprsunset
 

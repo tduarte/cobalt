@@ -67,7 +67,7 @@ Universal Blue key enrolled.
 - hypridle/hyprlock still use the classic hyprlang format; their configs are
   in `/usr/share/cobalt/hypr/` too and are passed by path.
 - **Decision (M4.6):** session daemons (hypridle, hyprpaper/`cobalt-wallpaper`,
-  hyprpolkitagent, cliphist, the shell) run as **systemd user services** bound
+  cliphist, the shell) run as **systemd user services** bound
   to the graphical session, so a crash restarts them instead of leaving them
   dead until logout. Evaluate `uwsm` (same COPR) to manage the session vs.
   our own units started from `hyprland.lua`.
@@ -253,10 +253,19 @@ gaps, blur and translucency on shell surfaces, livelier animations.
    - **Mission Center** with Ctrl+Shift+Esc, installed from
      `/usr/share/cobalt/flatpaks.list` by `cobalt-flatpaks.service`
 
-   Left:
-   - GNOME-style password prompts: our own polkit agent and NetworkManager
-     secret agent (no GTK4 agent is packaged; hyprpolkitagent is Qt)
-   - Date menu: calendar events (Evolution Data Server), weather, world clocks
+   - Password prompts in the shell, GNOME's modal dialog: the polkit agent
+     ("Authentication Required", replaces hyprpolkitagent) and the
+     NetworkManager secret agent (Wi-Fi, 802.1X, PPPoE, mobile broadband,
+     VPNs through their plugin's external UI mode). **Decision:** both export
+     their D-Bus interfaces directly; GJS can't subclass PolkitAgent.Listener
+     or NM.SecretAgentOld (vfuncs with callbacks), and no GTK4 agent is
+     packaged
+   - Date menu cards: the selected day's events from GNOME Shell's own
+     `gnome-shell-calendar-server` (Evolution Data Server; dots on busy
+     days), world clocks from GNOME Clocks and the weather (libgweather)
+     for GNOME Weather's location. The Flatpak apps keep these in their
+     sandbox keyfile, which we read like GNOME Shell does. Calendar, Clocks
+     and Weather are in the Flathub list
 7. **Hyprland personalization:** a Windows & Tiling page (layout, gaps,
    borders, rounding, blur, opacity, animations), a window rules editor
    (per-app float, workspace, opacity, size), Auto accent color.

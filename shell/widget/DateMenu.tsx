@@ -6,6 +6,9 @@ import { createPoll } from "ags/time"
 import { openMenu, toggleMenu } from "../lib/menus"
 import { interfaceSettings } from "../lib/system"
 import Calendar from "./Calendar"
+import { ClocksCard, EventsCard, WeatherCard } from "./DateMenuCards"
+import { reloadPlaces, watchPlaces } from "../lib/places"
+import { reloadEvents } from "../lib/calendar"
 import MediaPlayers from "./MediaPlayers"
 import NotificationList from "./NotificationList"
 import PanelMenu from "./PanelMenu"
@@ -48,10 +51,18 @@ export function DateMenuButton() {
   )
 }
 
-// GNOME's date menu: media players and notifications on the left, the date
-// and calendar on the right. Do Not Disturb lives in quick settings (GNOME 48).
+// GNOME's date menu: media players and notifications on the left; the date,
+// calendar, events, world clocks and weather on the right. Do Not Disturb
+// lives in quick settings (GNOME 48).
 export default function DateMenu() {
   const notifd = AstalNotifd.get_default()
+  watchPlaces()
+  // Calendars, Clocks and Weather may have changed since it was last open
+  openMenu.subscribe(() => {
+    if (openMenu.get() !== "date-menu") return
+    reloadPlaces()
+    reloadEvents()
+  })
   const notifications = createBinding(notifd, "notifications")
 
   return (
@@ -86,6 +97,11 @@ export default function DateMenu() {
           <label class="date-heading" xalign={0} label={now((dt) => (dt ? dt.format("%A")! : ""))} />
           <label class="date-big" xalign={0} label={now((dt) => (dt ? dt.format("%B %-d %Y")! : ""))} />
           <Calendar now={now} />
+          <box class="date-cards" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+            <EventsCard />
+            <ClocksCard now={now} />
+            <WeatherCard />
+          </box>
         </box>
       </box>
     </PanelMenu>

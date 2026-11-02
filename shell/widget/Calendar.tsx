@@ -2,10 +2,15 @@ import Gio from "gi://Gio"
 import GLib from "gi://GLib"
 import Gtk from "gi://Gtk?version=4.0"
 import { Accessor, For, With, createComputed, createState } from "ags"
+import { events, eventsOn, setRange } from "../lib/calendar"
 
 type Day = { date: GLib.DateTime; key: string }
 
 const keyOf = (d: GLib.DateTime) => d.format("%Y-%m-%d")!
+
+// The selected day, shared with the date menu's events card
+const [selectedDay, setSelectedDay] = createState(GLib.DateTime.new_now_local())
+export { selectedDay }
 
 // Settings > System > Date & Time: first day of the week and week numbers
 // (GNOME's calendar keys)
@@ -37,7 +42,8 @@ function monthGrid(year: number, month: number, start: number): Day[] {
 export default function Calendar({ now }: { now: Accessor<GLib.DateTime | null> }) {
   const today = GLib.DateTime.new_now_local()
   const [view, setView] = createState({ year: today.get_year(), month: today.get_month() })
-  const [selected, setSelected] = createState(keyOf(today))
+  const selected = selectedDay((d) => keyOf(d))
+  const setSelected = (date: GLib.DateTime) => setSelectedDay(date)
   const [start, setStart] = createState(weekStart())
   const [weekNumbers, setWeekNumbers] = createState(calendarSettings.get_boolean("show-weekdate"))
   calendarSettings.connect("changed::week-start-day", () => setStart(weekStart()))
@@ -45,6 +51,15 @@ export default function Calendar({ now }: { now: Accessor<GLib.DateTime | null> 
   const todayKey = now((n) => (n ? keyOf(n) : keyOf(today)))
 
   const days = createComputed(() => monthGrid(view().year, view().month, start()))
+  // Ask GNOME's calendar server for the events in the visible grid
+  days.subscribe(() => {
+    const ds = days.get()
+    setRange(ds[0].date.to_unix(), ds[ds.length - 1].date.add_days(1).to_unix())
+  })
+  {
+    const ds = days.get()
+    setRange(ds[0].date.to_unix(), ds[ds.length - 1].date.add_days(1).to_unix())
+  }
   // Weekday initials from the first day of the week; an empty first column
   // lines up with the week numbers
   const initials = createComputed(() => [
@@ -78,7 +93,7 @@ export default function Calendar({ now }: { now: Accessor<GLib.DateTime | null> 
           hexpand
           onClicked={() => {
             setView({ year: today.get_year(), month: today.get_month() })
-            setSelected(keyOf(today))
+            setSelected(GLib.DateTime.new_now_local())
           }}
         >
           <label label={title} />
@@ -113,9 +128,14 @@ export default function Calendar({ now }: { now: Accessor<GLib.DateTime | null> 
                 if (key === selected() && key !== todayKey()) c.push("selected")
                 return c.join(" ")
               })
+              // GNOME marks days that have events with a dot
+              const busy = events((list) => eventsOn(list, date).length > 0)
               return (
-                <button class={cls} halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER} onClicked={() => setSelected(key)}>
-                  <label label={date.format("%d")!} />
+                <button class={cls} halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER} onClicked={() => setSelected(date)}>
+                  <overlay>
+                    <label label={date.format("%d")!} />
+                    <box $type="overlay" class="event-dot" halign={Gtk.Align.CENTER} valign={Gtk.Align.END} visible={busy} />
+                  </overlay>
                 </button>
               )
             })}

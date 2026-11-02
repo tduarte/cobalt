@@ -1066,3 +1066,105 @@ window.bar button.recording-indicator {
     background-color: color.adjust(#e01b24, $lightness: 6%);
   }
 }
+
+// ---- Password prompts (polkit, network secrets): the end session card ----
+
+.prompt-dialog {
+  min-width: 440px;
+
+  .prompt-avatar {
+    border-radius: 999px;
+    background-color: $card-bg;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .prompt-user-name {
+    font-weight: bold;
+  }
+
+  entry.prompt-entry,
+  .prompt-entry {
+    min-height: 40px;
+    border-radius: 12px;
+    padding: 0 12px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: $fg;
+    border: none;
+    box-shadow: none;
+    outline: none;
+
+    &:focus-within {
+      outline: 2px solid $accent;
+      outline-offset: -2px;
+    }
+  }
+
+  .prompt-error {
+    color: #ff7b63;
+  }
+
+  .end-session-buttons button.suggested {
+    background-color: $accent;
+
+    &:hover {
+      background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
+    }
+
+    &:disabled {
+      opacity: 0.5;
+    }
+  }
+}
+
+// ---- Date menu cards: events, world clocks, weather ----
+
+.calendar button.day .event-dot {
+  min-width: 4px;
+  min-height: 4px;
+  margin-bottom: 5px;
+  border-radius: 999px;
+  background-color: $fg-dim;
+}
+
+.calendar button.day.today .event-dot {
+  background-color: $fg;
+}
+
+.date-cards {
+  margin-top: 10px;
+}
+
+window.panel-menu-window button.date-card,
+.panel-menu button.date-card {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background-color: $card-bg;
+  color: $fg;
+
+  &:hover {
+    background-color: $hover;
+  }
+
+  label.date-card-title {
+    font-weight: bold;
+  }
+
+  label {
+    font-weight: normal;
+  }
+
+  .date-card-dim,
+  .event-time {
+    color: $fg-dim;
+  }
+
+  .clock-time,
+  .forecast-temp {
+    font-feature-settings: "tnum";
+  }
+
+  .forecast-time {
+    font-size: 9pt;
+  }
+}

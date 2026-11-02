@@ -14,4 +14,4 @@ Wants=localsearch-3.service evolution-alarm-notify.service xdg-desktop-autostart
 Wants=cobalt-gsd@housekeeping.service cobalt-gsd@datetime.service cobalt-gsd@print-notifications.service
 Wants=cobalt-gsd@rfkill.service cobalt-gsd@smartcard.service cobalt-gsd@usb-protection.service
 Wants=cobalt-gsd@wwan.service cobalt-gsd@sound.service
-Wants=cobalt-shell.service hypridle.service hyprpaper.service cobalt-wallpaper.service hyprpolkitagent.service cobalt-clipboard.service cobalt-osd.service hyprsunset.service cobalt-idle.service cobalt-power-key.service
+Wants=cobalt-shell.service hypridle.service hyprpaper.service cobalt-wallpaper.service cobalt-clipboard.service cobalt-osd.service hyprsunset.service cobalt-idle.service cobalt-power-key.service

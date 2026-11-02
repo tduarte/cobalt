@@ -96,7 +96,7 @@ Add new COPRs to the loops in both `repos.sh` (enable) and `finalize.sh`
 - **Session services (systemd user units in `system_files/usr/lib/systemd/user/`).**
   `hyprland.lua` imports the environment and starts `cobalt-session.target`,
   which wants `cobalt-shell`, `hypridle`, `hyprpaper` + `cobalt-wallpaper`,
-  `hyprpolkitagent` and `cobalt-clipboard`; each restarts on failure. Packaged
+  and `cobalt-clipboard`; each restarts on failure. Packaged
   units (hypridle, hyprpaper, hyprsunset) get our flags through `*.service.d/`
   drop-ins. Hyprland itself activates `hyprland-session.target`, and
   everything stops with it. Inspect with
@@ -278,7 +278,7 @@ Hard-won facts:
   it for `group()`/`navRow()`).
 - **System pages:** hostname1, timedate1, locale1, AccountsService and
   systemd over D-Bus with `ALLOW_INTERACTIVE_AUTHORIZATION` (polkit prompts
-  through hyprpolkitagent); passwords are hashed with `openssl passwd -6`.
+  through the shell's polkit agent); passwords are hashed with `openssl passwd -6`.
   `cobalt-session` exports `LC_*` from GNOME's `region` key like
   gnome-session. `os-release` is branded cobalt in `build.sh` (ID stays
   fedora).
@@ -365,6 +365,32 @@ Hard-won facts:
   (`pkill -USR1 -x hyprlock`).
 - To try scripts in the VM without a rebuild: `sudo bootc usr-overlay`
   (a writable /usr until reboot), then copy them over.
+
+- **Agents (polkit, NetworkManager secrets) live in the shell**
+  (`lib/polkit.ts`, `lib/secrets.ts`, one `PromptDialog`). GJS can't
+  implement vfuncs that take a callback ("VFunc ... accepts another callback
+  as a parameter. This is not supported"), so they export the D-Bus
+  interfaces on the system bus with `Gio.DBusExportedObject` and register
+  themselves. **Keep the exported object in a module variable**: a local one
+  gets garbage-collected and the agent silently disappears after the first
+  request. The polkit subject is `XDG_SESSION_ID` (the shell runs as a user
+  service, outside the session scope); `PolkitAgent.Session` works fine.
+- Test the agents: `pkexec true` started from the session (a script run
+  with `hyprctl dispatch 'hl.dsp.exec_cmd("/tmp/x.sh")'`), a VPN with
+  `password-flags=2`, and mac80211_hwsim with an NM hotspot on `wlan1` plus a
+  `psk-flags=2` client connection on `wlan0` (no hostapd needed). Wait for
+  the dialog's layer before typing with wtype, or the keys go to the focused
+  window.
+- Date menu events come from `gnome-shell-calendar-server` (D-Bus activated):
+  call `SetTimeRange` with `force_reload` on a new connection, or nothing
+  arrives. Seed events with ECal (`create_object_sync` on the builtin
+  calendar).
+- Flatpak GNOME apps (Clocks, Weather) have no dconf access; their settings
+  are in `~/.var/app/<id>/config/glib-2.0/settings/keyfile`.
+- **The VM blanks its display when idle** (hypridle, DPMS off) and `grim`
+  then hangs waiting for a frame. Check `hyprctl monitors -j` (`dpmsStatus`),
+  wake it with `hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'`, and stop
+  `hypridle` for long QA sessions.
 
 ## Visual QA (do this before handing UI to the user)
 

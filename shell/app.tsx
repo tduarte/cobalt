@@ -5,11 +5,14 @@ import { followAccent } from "./lib/accent"
 import { startNightLight } from "./lib/nightlight"
 import { syncDoNotDisturb } from "./lib/notifications"
 import { checkUpdates, watchUpdates } from "./lib/updates"
+import { startPolkitAgent } from "./lib/polkit"
+import { startNetworkAgent } from "./lib/secrets"
 import style from "./style.scss"
 import Bar from "./widget/Bar"
 import HotEdge from "./widget/HotEdge"
 import DateMenu from "./widget/DateMenu"
 import EndSession, { endSession, type EndKind } from "./widget/EndSession"
+import PromptDialog from "./widget/PromptDialog"
 import { MenuBackdrop } from "./widget/PanelMenu"
 import QuickSettings from "./widget/QuickSettings"
 import ScreenshotUI, { setRecordingState, syncRecording, toggleScreenshotUI } from "./widget/ScreenshotUI"
@@ -89,6 +92,9 @@ app.start({
     HotEdge()
     Shortcuts()
     EndSession()
+    PromptDialog()
+    startPolkitAgent()
+    startNetworkAgent()
     Switcher()
     ScreenshotUI()
     syncRecording()
