@@ -1,13 +1,19 @@
 import Adw from "gi://Adw?version=1"
 import AstalNetwork from "gi://AstalNetwork"
+import AppearancePage from "./appearance"
 import BluetoothPage from "./bluetooth"
+import DisplaysPage from "./displays"
+import MultitaskingPage from "./multitasking"
 import NetworkPage from "./network"
 import Placeholder from "./placeholder"
+import PowerPage from "./power"
+import SoundPage from "./sound"
 import WifiPage from "./wifi"
 
 export type PageContext = {
-  // Show a sub-page (with a back arrow) in the content pane
-  push: (page: Adw.NavigationPage) => void
+  // Show a sub-page (with a back arrow) in the content pane; it's built in its
+  // own scope, cleaned up when the user goes back
+  push: (build: () => Adw.NavigationPage) => void
   // A deep link: `cobalt-settings <page> <action>` (e.g. `network add-vpn`)
   action: (name: string, run: () => void) => void
 }
@@ -56,11 +62,46 @@ export const PAGES: PageDef[] = [
     keywords: ["devices", "pair", "headphones"],
     build: BluetoothPage,
   },
-  { id: "display", title: "Displays", icon: "org.gnome.Settings-display-symbolic", group: 1, build: soon("Displays", "org.gnome.Settings-display-symbolic") },
-  { id: "sound", title: "Sound", icon: "org.gnome.Settings-sound-symbolic", group: 1, build: soon("Sound", "org.gnome.Settings-sound-symbolic") },
-  { id: "power", title: "Power", icon: "org.gnome.Settings-power-symbolic", group: 1, build: soon("Power", "org.gnome.Settings-power-symbolic") },
-  { id: "multitasking", title: "Multitasking", icon: "org.gnome.Settings-multitasking-symbolic", group: 1, build: soon("Multitasking", "org.gnome.Settings-multitasking-symbolic") },
-  { id: "appearance", title: "Appearance", icon: "org.gnome.Settings-appearance-symbolic", group: 1, build: soon("Appearance", "org.gnome.Settings-appearance-symbolic") },
+  {
+    id: "display",
+    title: "Displays",
+    icon: "org.gnome.Settings-display-symbolic",
+    group: 1,
+    keywords: ["monitor", "screen", "resolution", "refresh", "scale", "hdr", "vrr", "night light"],
+    build: DisplaysPage,
+  },
+  {
+    id: "sound",
+    title: "Sound",
+    icon: "org.gnome.Settings-sound-symbolic",
+    group: 1,
+    keywords: ["audio", "volume", "speakers", "headphones", "microphone", "balance"],
+    build: SoundPage,
+  },
+  {
+    id: "power",
+    title: "Power",
+    icon: "org.gnome.Settings-power-symbolic",
+    group: 1,
+    keywords: ["battery", "suspend", "sleep", "power mode", "performance", "screen blank", "idle"],
+    build: PowerPage,
+  },
+  {
+    id: "multitasking",
+    title: "Multitasking",
+    icon: "org.gnome.Settings-multitasking-symbolic",
+    group: 1,
+    keywords: ["workspaces", "hot edge", "hot corner"],
+    build: MultitaskingPage,
+  },
+  {
+    id: "appearance",
+    title: "Appearance",
+    icon: "org.gnome.Settings-appearance-symbolic",
+    group: 1,
+    keywords: ["accent", "color", "background", "wallpaper", "theme"],
+    build: AppearancePage,
+  },
   { id: "applications", title: "Apps", icon: "org.gnome.Settings-applications-symbolic", group: 2, build: soon("Apps", "org.gnome.Settings-applications-symbolic") },
   { id: "notifications", title: "Notifications", icon: "org.gnome.Settings-notifications-symbolic", group: 2, build: soon("Notifications", "org.gnome.Settings-notifications-symbolic") },
   { id: "search", title: "Search", icon: "org.gnome.Settings-search-symbolic", group: 2, build: soon("Search", "org.gnome.Settings-search-symbolic") },

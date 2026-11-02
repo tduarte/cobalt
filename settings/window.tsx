@@ -66,12 +66,30 @@ export default function SettingsWindow({ app }: { app: Adw.Application }) {
     content,
   })
 
+  // Sub-pages get their own scope, disposed when popped
+  const subPages = new Map<Adw.NavigationPage, () => void>()
+  nav.connect("popped", (_, p: Adw.NavigationPage) => {
+    subPages.get(p)?.()
+    subPages.delete(p)
+  })
+  const pushSubPage = (build: () => Adw.NavigationPage) => {
+    let dispose: () => void = () => {}
+    const p = createRoot((d) => {
+      dispose = d
+      return build()
+    })
+    subPages.set(p, dispose)
+    nav.push(p)
+  }
+
   const open = (page: PageDef) => {
+    for (const dispose of subPages.values()) dispose()
+    subPages.clear()
     disposePage?.()
     actions = new Map()
     const root = createRoot((dispose) => {
       disposePage = dispose
-      return page.build({ push: (p) => nav.push(p), action: (name, run) => actions.set(name, run) })
+      return page.build({ push: pushSubPage, action: (name, run) => actions.set(name, run) })
     })
     nav.replace([root])
     content.title = page.title

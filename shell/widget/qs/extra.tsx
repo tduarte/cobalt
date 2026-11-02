@@ -7,6 +7,7 @@ import Gtk from "gi://Gtk?version=4.0"
 import NM from "gi://NM"
 import { For, createBinding, createState } from "ags"
 import { execAsync } from "ags/process"
+import { nightLightActive, toggleNightLight } from "../../lib/nightlight"
 import { sh, userUnit } from "../../lib/system"
 import { MenuItem, MenuPanel, OpenMenu, Toggle, ToggleSpec } from "./parts"
 
@@ -86,7 +87,16 @@ export function vpnSpec(open: OpenMenu): ToggleSpec | null {
   }
 }
 
-// ---- Night Light (hyprsunset.service; its drop-in sets the temperature) ----
+// ---- Night Light (schedule and override in lib/nightlight.ts) ----
+
+export function nightLightSpec(): ToggleSpec | null {
+  if (!GLib.find_program_in_path("hyprsunset")) return null
+  return {
+    toggle: () => (
+      <Toggle icon="night-light-symbolic" label="Night Light" active={nightLightActive} onToggled={toggleNightLight} />
+    ),
+  }
+}
 
 // A toggle backed by a systemd user unit: the state lives in systemd, so it
 // survives shell restarts
@@ -107,13 +117,6 @@ function unitToggle(icon: string, label: string, unit: string, start: () => Prom
       />
     ),
   }
-}
-
-export function nightLightSpec(): ToggleSpec | null {
-  if (!GLib.find_program_in_path("hyprsunset")) return null
-  return unitToggle("night-light-symbolic", "Night Light", "hyprsunset.service", () =>
-    userUnit.start("hyprsunset.service"),
-  )
 }
 
 // ---- Caffeine: keep the screen awake (hypridle honors systemd inhibitors) ----

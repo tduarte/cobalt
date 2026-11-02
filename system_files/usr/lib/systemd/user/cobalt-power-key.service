@@ -1,0 +1,10 @@
+# Take the power button from logind for the session, so cobalt-power-button
+# can follow Settings > Power > Power Button Behavior
+[Unit]
+Description=Power button handled by the cobalt session
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/systemd-inhibit --what=handle-power-key --who=cobalt --why="Power button follows Settings" --mode=block sleep infinity
+Restart=on-failure
+Slice=background.slice

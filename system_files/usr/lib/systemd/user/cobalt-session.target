@@ -6,4 +6,4 @@
 Description=cobalt session services
 PartOf=hyprland-session.target
 After=hyprland-session.target
-Wants=cobalt-shell.service hypridle.service hyprpaper.service cobalt-wallpaper.service hyprpolkitagent.service cobalt-clipboard.service cobalt-osd.service
+Wants=cobalt-shell.service hypridle.service hyprpaper.service cobalt-wallpaper.service hyprpolkitagent.service cobalt-clipboard.service cobalt-osd.service hyprsunset.service cobalt-idle.service cobalt-power-key.service

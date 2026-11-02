@@ -80,7 +80,7 @@ hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 ---- LOOK AND FEEL ----
 -----------------------
 
--- Adwaita: dark surfaces, blue accent (#3584e4), soft shadows, rounded corners,
+-- Adwaita: dark surfaces, the accent color (#3584e4 by default), soft shadows, rounded corners,
 -- plus blur and springy animations.
 hl.config({
     general = {
@@ -90,6 +90,7 @@ hl.config({
         border_size = 2,
 
         col = {
+            -- Blue until the shell applies the accent from Settings (lib/accent.ts)
             active_border   = "rgba(3584e4ee)",
             inactive_border = "rgba(ffffff14)",
         },
@@ -290,6 +291,7 @@ hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("swayosd-client --output-volume 
 hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("swayosd-client --input-volume mute-toggle"),  { locked = true })
 hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("swayosd-client --brightness raise"),         { locked = true, repeating = true })
 hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("swayosd-client --brightness lower"),         { locked = true, repeating = true })
+hl.bind("XF86PowerOff",         hl.dsp.exec_cmd("cobalt-power-button"),  { locked = true })
 hl.bind("XF86AudioNext",        hl.dsp.exec_cmd("playerctl next"),       { locked = true })
 hl.bind("XF86AudioPause",       hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay",        hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
@@ -360,6 +362,27 @@ hl.layer_rule({ name = "overview-blur", match = { namespace = "^cobalt-overview$
 hl.layer_rule({ name = "menu-blur", match = { namespace = "^cobalt-menu$" }, blur = true, ignore_alpha = 0.2 })
 hl.layer_rule({ name = "bar-blur", match = { namespace = "^cobalt-bar$" }, blur = true, blur_popups = true, ignore_alpha = 0.2 })
 hl.layer_rule({ name = "notifications-blur", match = { namespace = "^cobalt-notifications$" }, blur = true, ignore_alpha = 0.2 })
+
+
+--------------------------
+---- SETTINGS APP FILES ----
+--------------------------
+
+-- The Settings app writes what it changes (displays, workspaces, input,
+-- shortcuts) to ~/.config/cobalt/settings/<name>.lua and applies it live with
+-- `hyprctl eval`; load them on start, before personal overrides.
+do
+    local config_home = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")
+    for _, name in ipairs({ "monitors", "workspaces", "input", "binds" }) do
+        local path = config_home .. "/cobalt/settings/" .. name .. ".lua"
+        local f = io.open(path, "r")
+        if f then
+            f:close()
+            local ok, err = pcall(dofile, path)
+            if not ok then print("cobalt: " .. path .. ": " .. tostring(err)) end
+        end
+    end
+end
 
 
 -----------------------

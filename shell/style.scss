@@ -1,8 +1,8 @@
 @use "sass:color";
 
 // GNOME Shell look on top of Adwaita (dark). Colors follow GNOME's palette;
-// the accent will come from the Settings app (M5).
-$accent: #3584e4;
+// the accent is GNOME's accent-color, set at runtime (lib/accent.ts).
+$accent: var(--cobalt-accent, #3584e4);
 $fg: #ffffff;
 $fg-dim: rgba(255, 255, 255, 0.7);
 $panel-bg: rgba(0, 0, 0, 0.72);
@@ -548,6 +548,12 @@ window.overview {
   background-color: rgba(24, 24, 28, 0.78);
   color: $fg;
   padding: 16px 0 20px 0;
+}
+
+// GTK's built-in Adwaita bakes the blue accent into focus rings, so ours
+// follow the accent explicitly
+entry:focus-within {
+  outline-color: color-mix(in srgb, $accent 70%, transparent);
 }
 
 entry.overview-search,

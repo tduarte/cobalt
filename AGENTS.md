@@ -212,6 +212,32 @@ Hard-won facts:
   without it (Proxy).
 - `Adw.ViewSwitcher` needs an icon per page; text tabs are
   `Gtk.StackSwitcher`.
+- **Settings → Hyprland:** apply live with `hyprctl eval '<lua>'` and save to
+  `~/.config/cobalt/settings/<name>.lua` (`lib/hypr.ts`); `hyprland.lua` loads
+  those files (monitors, workspaces, input, binds) before personal overrides.
+  Displays keeps its UI state in `monitors.json` next to it and asks GNOME's
+  "Keep Display Settings?" with a 20 s revert.
+- **Settings → GNOME keys → small daemons**: the app writes GNOME's keys and
+  something in the session applies them: `cobalt-wallpaper` (background),
+  `cobalt-idle` (hypridle config from idle-delay, lock, idle-dim, automatic
+  suspend), `cobalt-power-button` + `cobalt-power-key.service` (logind
+  inhibitor; Power Button Behavior), the shell (accent color, Night Light via
+  hyprsunset IPC, Hot Edge via `enable-hot-corners`).
+- GNOME sets some defaults only for its own desktop (`[org.gnome.mutter:GNOME]`
+  in `00_org.gnome.shell.gschema.override`); our session isn't "GNOME", so
+  set those in `zz1-cobalt.gschema.override` (e.g. dynamic workspaces).
+- **Accent color:** `xdg-desktop-portal-gtk` doesn't expose `accent-color`, so
+  `/etc/xdg-desktop-portal/hyprland-portals.conf` takes the Settings portal
+  from `xdg-desktop-portal-gnome` (installed with GDM). Check with
+  `gdbus call --session --dest org.freedesktop.portal.Desktop --object-path
+  /org/freedesktop/portal/desktop --method
+  org.freedesktop.portal.Settings.ReadOne org.freedesktop.appearance accent-color`.
+  The shell gets it as `var(--cobalt-accent)` (`lib/accent.ts`).
+- Sub-pages are pushed with `ctx.push(() => page)`: the builder runs in its own
+  gnim root, disposed when the user goes back (building in a click handler
+  otherwise logs "out of tracking context").
+- A `Gtk.Picture`'s natural size is its texture's; thumbnails subclass it and
+  override `vfunc_measure` (Appearance backgrounds).
 - Simulated Wi-Fi in the VM: `sudo modprobe mac80211_hwsim radios=3`, mark
   `wlan1`/`wlan2` unmanaged, run hostapd from an Alpine podman container
   (`--net=host --privileged --security-opt label=disable`). There's no DHCP,

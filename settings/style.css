@@ -10,3 +10,54 @@
   border-radius: 12px;
   padding: 12px;
 }
+
+/* Appearance: accent swatches (GNOME's round buttons with a ring when picked) */
+.accent-swatch {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  outline: 3px solid transparent;
+  outline-offset: 3px;
+}
+/* The ring around the picked swatch is the swatch's own color */
+.accent-swatch.blue { background: #3584e4; outline-color: alpha(#3584e4, 0); }
+.accent-swatch.blue:checked { outline-color: #3584e4; }
+.accent-swatch.teal { background: #2190a4; outline-color: alpha(#2190a4, 0); }
+.accent-swatch.teal:checked { outline-color: #2190a4; }
+.accent-swatch.green { background: #3a944a; outline-color: alpha(#3a944a, 0); }
+.accent-swatch.green:checked { outline-color: #3a944a; }
+.accent-swatch.yellow { background: #c88800; outline-color: alpha(#c88800, 0); }
+.accent-swatch.yellow:checked { outline-color: #c88800; }
+.accent-swatch.orange { background: #ed5b00; outline-color: alpha(#ed5b00, 0); }
+.accent-swatch.orange:checked { outline-color: #ed5b00; }
+.accent-swatch.red { background: #e62d42; outline-color: alpha(#e62d42, 0); }
+.accent-swatch.red:checked { outline-color: #e62d42; }
+.accent-swatch.pink { background: #d56199; outline-color: alpha(#d56199, 0); }
+.accent-swatch.pink:checked { outline-color: #d56199; }
+.accent-swatch.purple { background: #9141ac; outline-color: alpha(#9141ac, 0); }
+.accent-swatch.purple:checked { outline-color: #9141ac; }
+.accent-swatch.slate { background: #6f8396; outline-color: alpha(#6f8396, 0); }
+.accent-swatch.slate:checked { outline-color: #6f8396; }
+
+/* Appearance: background thumbnails */
+.background-thumb {
+  border-radius: 10px;
+}
+.background-tile {
+  border-radius: 12px;
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+}
+.background-tile.selected {
+  outline-color: var(--accent-bg-color);
+}
+
+/* Night Light: GNOME's warm gradient instead of the accent fill */
+.night-light-temperature trough {
+  min-height: 8px;
+  background-image: linear-gradient(to right, #f4e5d0, #f1a94f, #e66100);
+}
+.night-light-temperature highlight {
+  background: none;
+}

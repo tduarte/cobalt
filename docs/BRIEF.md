@@ -196,6 +196,12 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 
 ## Backlog (polish)
 
+- Displays: arrangement of several monitors (drag to position, primary
+  display); today each monitor is configured on its own.
+- Sound: alert sound picker and System Sounds volume (nothing plays alert
+  sounds yet); input level meter.
+- Multitasking: GNOME's multi-monitor workspaces and app switching options.
+- Hyprland's active window border could follow the accent color.
 - **Auto accent color** (after M5): an "Auto" swatch in Appearance that picks
   the accent from the current wallpaper and updates when it changes.
 

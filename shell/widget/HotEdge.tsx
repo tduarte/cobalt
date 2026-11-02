@@ -2,6 +2,8 @@ import app from "ags/gtk4/app"
 import { Astal, Gtk } from "ags/gtk4"
 import GLib from "gi://GLib"
 import { showOverview } from "./overview"
+import { interfaceSettings } from "../lib/system"
+import { createState } from "ags"
 
 const DWELL_MS = 120
 
@@ -9,6 +11,12 @@ const DWELL_MS = 120
 // edge opens the overview. A 1 px strip on the TOP layer, so fullscreen
 // windows (games, video) cover it and it can't fire while playing. It needs a
 // tiny background alpha (style.scss): fully transparent surfaces aren't mapped.
+// Settings > Multitasking > Hot Edge (GNOME's hot corner key)
+const [enabled, setEnabled] = createState(interfaceSettings.get_boolean("enable-hot-corners"))
+interfaceSettings.connect("changed::enable-hot-corners", () =>
+  setEnabled(interfaceSettings.get_boolean("enable-hot-corners")),
+)
+
 export default function HotEdge() {
   const { BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor
   let timer: number | null = null
@@ -27,7 +35,7 @@ export default function HotEdge() {
       exclusivity={Astal.Exclusivity.IGNORE}
       anchor={BOTTOM | LEFT | RIGHT}
       heightRequest={1}
-      visible
+      visible={enabled}
       $={(self) => {
         const motion = new Gtk.EventControllerMotion()
         // Wait a moment so sweeping past the edge doesn't trigger it

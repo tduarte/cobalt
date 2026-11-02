@@ -24,3 +24,20 @@ picture-options='zoom'
 # setup carries over)
 [org.gnome.shell]
 favorite-apps=['org.gnome.Nautilus.desktop', 'org.mozilla.firefox.desktop', 'steam.desktop', 'com.mitchellh.ghostty.desktop', 'org.gnome.TextEditor.desktop']
+
+# Night Light: manual schedule (sunset/sunrise needs location services); the
+# shell applies it through hyprsunset
+[org.gnome.settings-daemon.plugins.color]
+night-light-schedule-automatic=false
+night-light-schedule-from=20.0
+night-light-schedule-to=6.0
+
+# A gaming desktop shouldn't suspend mid-download; turn it on in Settings >
+# Power (cobalt-idle turns these keys into hypridle's config)
+[org.gnome.settings-daemon.plugins.power]
+sleep-inactive-ac-type='nothing'
+
+# GNOME sets this only for its own desktop ([org.gnome.mutter:GNOME]);
+# Hyprland workspaces are dynamic too, so match it
+[org.gnome.mutter]
+dynamic-workspaces=true

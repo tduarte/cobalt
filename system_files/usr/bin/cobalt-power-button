@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+# The power button (XF86PowerOff bind in hyprland.lua) does what Settings >
+# Power > Power Button Behavior says. cobalt-power-key.service keeps logind
+# from handling the key itself.
+case "$(gsettings get org.gnome.settings-daemon.plugins.power power-button-action)" in
+    "'suspend'") systemctl suspend ;;
+    "'hibernate'") systemctl hibernate ;;
+    "'interactive'") ags request -i cobalt toggle quick-settings power ;;
+esac

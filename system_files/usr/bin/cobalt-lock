@@ -1,0 +1,30 @@
+#!/usr/bin/bash
+# Lock the screen with hyprlock in the current accent color (Settings >
+# Appearance). hyprlock only reads its config at start, so write a copy with
+# the accent filled in; if anything goes wrong, lock with the stock config.
+# Locking must never fail because of a color.
+
+pidof hyprlock >/dev/null && exit 0
+
+base=/usr/share/cobalt/hypr/hyprlock.conf
+config="${XDG_RUNTIME_DIR:-/tmp}/cobalt/hyprlock.conf"
+
+# libadwaita's accent colors as "r, g, b"
+case "$(gsettings get org.gnome.desktop.interface accent-color 2>/dev/null)" in
+    "'teal'") rgb="33, 144, 164" ;;
+    "'green'") rgb="58, 148, 74" ;;
+    "'yellow'") rgb="200, 136, 0" ;;
+    "'orange'") rgb="237, 91, 0" ;;
+    "'red'") rgb="230, 45, 66" ;;
+    "'pink'") rgb="213, 97, 153" ;;
+    "'purple'") rgb="145, 65, 172" ;;
+    "'slate'") rgb="111, 131, 150" ;;
+    *) rgb="53, 132, 228" ;;
+esac
+
+if mkdir -p "${config%/*}" &&
+    sed "s/check_color = rgba(53, 132, 228, 0.9)/check_color = rgba($rgb, 0.9)/" "$base" > "$config.tmp" &&
+    mv "$config.tmp" "$config"; then
+    exec hyprlock --config "$config"
+fi
+exec hyprlock --config "$base"

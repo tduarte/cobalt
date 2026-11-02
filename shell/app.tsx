@@ -1,6 +1,8 @@
 import app from "ags/gtk4/app"
 import { For, This, createBinding } from "ags"
 import { describeMenu, menuNames, toggleMenu } from "./lib/menus"
+import { followAccent } from "./lib/accent"
+import { startNightLight } from "./lib/nightlight"
 import style from "./style.scss"
 import Bar from "./widget/Bar"
 import HotEdge from "./widget/HotEdge"
@@ -43,6 +45,8 @@ app.start({
     }
   },
   main() {
+    followAccent()
+    startNightLight()
     const monitors = createBinding(app, "monitors")
 
     NotificationBanners()
