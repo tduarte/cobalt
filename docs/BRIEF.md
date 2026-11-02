@@ -87,6 +87,14 @@ Astal provides the backends: Hyprland, network, Bluetooth, WirePlumber
 All in **TypeScript/GJS with GTK4 + libadwaita**, sharing code and the Astal
 libraries with the shell.
 
+**Packaging (decision):** built into the image from source. The
+Containerfile's `shell-step` runs `ags bundle` on `shell/` and `settings/`
+(one gjs-run file each: `/usr/bin/cobalt-shell`, `/usr/bin/cobalt-settings`);
+runtime libraries come from Fedora/COPR packages, and `.desktop` files,
+units and rules from `system_files/`. No RPMs or Flatpaks: the apps need
+direct system access (NetworkManager, systemd, Hyprland, polkit) and ship
+and roll back with the image.
+
 | App | What it does |
 |---|---|
 | Settings | **Full GNOME Settings parity** (decision): every GNOME Settings page, as close to a real DE as possible, including everything quick settings does (Wi-Fi, Network/VPN, Bluetooth, Sound, Power) with the full detail pages, plus Displays, Appearance/Background, Notifications, Search, Multitasking, Apps, Privacy, Online Accounts, Sharing, Mouse & Touchpad, Keyboard, Color, Printers, Accessibility, System (region, date & time, users, about). Layout and pages copied from the user's GNOME Settings screenshots (kept locally in `~/.cache/cobalt-refs/settings/`, not in the repo: they show personal network names). **Dark only** (decision): Appearance has no light style for now; it offers accent colors and backgrounds. Keyboard shortcuts are **editable** (saved to a generated file the Hyprland config loads). Pages without a backend outside GNOME Shell (Remote Desktop, Online Accounts, Printers, Sharing, Color Management) are **hidden** until we build replacements; Wellbeing is out of scope. `AdwNavigationSplitView` + preference pages. Writes the same GSettings keys GNOME uses (`org.gnome.desktop.*`), so libadwaita apps follow it through the settings portal; Hyprland-specific settings (monitors, input, keybindings) go to a generated file the Lua config loads. Opened from the quick settings gear. Opens **floating** by default (Hyprland window rule on its app id), like a GNOME window. |
@@ -296,8 +304,6 @@ of scope.**
 
 ## Open questions
 
-- How our apps are packaged into the image: a build stage in the
-  Containerfile, or RPMs built in CI.
 - Which Bazzite helpers (`ujust` recipes, media automount, etc.) to carry over.
 - Dotfiles: managed by the image defaults alone, or also a personal dotfiles
   repo.
