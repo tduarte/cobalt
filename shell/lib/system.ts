@@ -38,6 +38,11 @@ export function launchApp(app: AstalApps.Application) {
   })
 }
 
+// Open a page of the Settings app (in its own scope, like any app)
+export function openSettings(page = "") {
+  sh(`systemd-run --user --scope --quiet --collect --slice=app-graphical.slice cobalt-settings ${page}`)
+}
+
 // A systemd user unit the shell toggles (Night Light, Caffeine). Its state
 // lives in systemd, so it survives shell restarts.
 export const userUnit = {

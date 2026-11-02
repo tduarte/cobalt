@@ -10,7 +10,7 @@ import { For, With, createBinding, createState } from "ags"
 import { closeMenus, openMenu, registerSubMenus, toggleMenu } from "../lib/menus"
 import PanelMenu from "./PanelMenu"
 import BackgroundApps from "./qs/background"
-import { power, sh } from "../lib/system"
+import { openSettings, power, sh } from "../lib/system"
 import {
   BrightnessSlider,
   MicIndicator,
@@ -423,6 +423,12 @@ export default function QuickSettings() {
           </button>
           <BatteryLabel />
           <box hexpand />
+          <button class="icon-button" tooltipText="Settings" onClicked={() => {
+            closeMenus()
+            openSettings()
+          }}>
+            <image iconName="emblem-system-symbolic" />
+          </button>
           <button class="icon-button" tooltipText="Lock" onClicked={() => {
             closeMenus()
             power.lock()

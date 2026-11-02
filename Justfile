@@ -536,6 +536,16 @@ vm-update:
     done
     just vm-start
 
+# Run the Settings app from this checkout in the VM's session (no image
+# rebuild); logs go to /tmp/cobalt-settings.log in the VM. Optional page id.
+[group('Dev VM')]
+settings-dev page="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tar -C settings --exclude=node_modules --exclude=@girs -cf - . \
+        | just vm-ssh 'rm -rf ~/.cache/cobalt-settings-dev && mkdir -p ~/.cache/cobalt-settings-dev && tar -C ~/.cache/cobalt-settings-dev -xf -'
+    just vm-ssh 'export XDG_RUNTIME_DIR=/run/user/$(id -u) HYPRLAND_INSTANCE_SIGNATURE=$(ls -t /run/user/$(id -u)/hypr | head -1); gdbus call --session --dest io.github.tduarte.cobalt.Settings --object-path /io/github/tduarte/cobalt/Settings --method org.gtk.Actions.Activate quit [] {} >/dev/null 2>&1 || true; sleep 0.5; hyprctl dispatch "hl.dsp.exec_cmd(\"cd $HOME/.cache/cobalt-settings-dev && ags run --gtk 4 app.ts {{ page }} > /tmp/cobalt-settings.log 2>&1\")" >/dev/null'
+
 # Replaces the running shell; logs go to /tmp/cobalt-shell.log in the VM.
 # Run the shell from this checkout in the VM's Hyprland session (no image rebuild)
 [group('Dev VM')]

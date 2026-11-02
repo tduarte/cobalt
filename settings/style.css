@@ -1,0 +1,12 @@
+/* Small additions to libadwaita; everything else is stock Adwaita */
+
+/* GNOME's small lock on secured Wi-Fi networks, at the icon's corner */
+.wifi-lock {
+  margin-bottom: -2px;
+}
+
+.qr-code {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+}

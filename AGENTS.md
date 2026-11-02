@@ -27,6 +27,7 @@ services in podman, CLIs via Homebrew.
 | `build_files/` | `kernel.sh`, `repos.sh` + `mesa.sh`, `gaming.sh`, `dev.sh`, `desktop.sh`, `build.sh` (copies `system_files/`), `finalize.sh` |
 | `system_files/` | Copied to `/` in the image: Hyprland/hypridle/hyprlock configs in `/usr/share/cobalt/hypr/`, `cobalt-session`, `cobalt-screenshot`, GDM session, gschema overrides |
 | `shell/` | The AGS v3 shell (TypeScript/JSX, GTK4): `app.tsx`, `widget/`, `lib/`, `style.scss` |
+| `settings/` | The Settings app (`Adw.Application` `io.github.tduarte.cobalt.Settings`, gnim JSX), bundled by `ags bundle` into `/usr/bin/cobalt-settings` in `shell.sh`: `window.tsx` (sidebar + content), `pages/`, `lib/` (NM helpers, connection editor, VPN) |
 | `Justfile` | Build recipes (template) + `[Dev VM]` recipes (ours) |
 | `docs/BRIEF.md` | Product brief, decisions, milestones |
 
@@ -128,6 +129,7 @@ registry). Boxes is a Flatpak: run libvirt tools as
 | `just vm-push` | `just build cobalt dev` + push to the local registry |
 | `just vm-update` | `bootc switch`/`upgrade` in the VM, then power off and cold-start |
 | `just shell-dev` | Stops `cobalt-shell.service`, copies `shell/` into the VM and runs it with `ags run` inside Hyprland (no image rebuild); log at `/tmp/cobalt-shell.log` in the VM. A VM restart brings the service back |
+| `just settings-dev [page]` | Copies `settings/` into the VM and (re)starts the Settings app from it (quits the running one over D-Bus); log at `/tmp/cobalt-settings.log` |
 | `just vm-screenshot <path>` | `grim` screenshot of the VM session to a local file |
 
 Hard-won facts:
@@ -186,6 +188,35 @@ Hard-won facts:
   Hyprland 0.57; its workspace/monitor state is still correct.
 - The shell writes/reads GNOME's GSettings (`org.gnome.desktop.interface`) so
   libadwaita apps and the future Settings app stay in sync.
+
+## Settings app
+
+- Pages are registered in `settings/pages/index.ts` (GNOME's sidebar order;
+  `available()` hides a page without hardware, like Wi-Fi). Each page builds
+  inside a gnim root; use `watch`/`track`/`every` from `lib/ui.ts` so signal
+  handlers and timers go away when the user switches pages.
+- Deep links: `cobalt-settings <page> [action]` (e.g. `network add-vpn`,
+  `network proxy`, `network wired`, `wifi saved|hidden|hotspot`). A second
+  invocation goes to the running instance, so QA screenshots of dialogs are
+  `cobalt-settings ... && grim`.
+- **Don't call `obj.disconnect(id)` on NM objects**: `NM.Device.disconnect()`
+  is NetworkManager's "disconnect device" method. Use
+  `GObject.signal_handler_disconnect(obj, id)`.
+- GList properties (AstalNetwork `wifi.accessPoints`) can fail to convert in
+  GJS ("Can't convert non-null pointer"); use the getter
+  (`get_access_points()`).
+- A `PreferencesPage` scrolls, so a dialog made of one has no natural height
+  and collapses; short dialogs use `dialogBox()` (sizes to content). A
+  `ScrolledWindow` with `propagateNaturalHeight` collapses too when rows have
+  wrapping text (height-for-width); `scrollingBox()` is only for dialogs
+  without it (Proxy).
+- `Adw.ViewSwitcher` needs an icon per page; text tabs are
+  `Gtk.StackSwitcher`.
+- Simulated Wi-Fi in the VM: `sudo modprobe mac80211_hwsim radios=3`, mark
+  `wlan1`/`wlan2` unmanaged, run hostapd from an Alpine podman container
+  (`--net=host --privileged --security-opt label=disable`). There's no DHCP,
+  so give the client connection a manual IPv4 address. Connect from SSH with
+  `sudo nmcli` (no polkit agent over SSH).
 
 ## Shell UI rules (learned the hard way)
 

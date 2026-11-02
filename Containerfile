@@ -34,6 +34,7 @@ COPY build_files/extras.sh /
 FROM scratch AS shell-step
 COPY build_files/shell.sh /
 COPY shell /shell
+COPY settings /settings
 
 FROM scratch AS files-step
 COPY build_files/build.sh /

@@ -60,6 +60,16 @@ dnf5 -y install \
 # On-screen display for the volume/brightness keys (Terra)
 dnf5 -y install SwayOSD
 
+# Settings app backends: NetworkManager VPN plugins with their GTK 4 editors
+# (Add VPN), libnma for them, and qrencode for sharing Wi-Fi as a QR code
+dnf5 -y install \
+    libnma-gtk4 \
+    NetworkManager-openvpn-gnome \
+    NetworkManager-openconnect-gnome \
+    NetworkManager-vpnc-gnome \
+    NetworkManager-ssh-gnome \
+    qrencode
+
 # Adwaita look for GTK3/GTK4 apps and the shell
 dnf5 -y install \
     adw-gtk3-theme \

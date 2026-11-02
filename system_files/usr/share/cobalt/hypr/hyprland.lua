@@ -346,6 +346,15 @@ for _, class in ipairs({
     hl.window_rule({ match = { class = class }, float = true })
 end
 
+-- Settings opens as a floating, centered window like on GNOME
+hl.window_rule({
+    name  = "settings-float",
+    match = { class = "^io.github.tduarte.cobalt.Settings$" },
+    float = true,
+    size = "980 720",
+    center = true,
+})
+
 -- Shell surfaces: blur behind the translucent bar, menus and the overview
 hl.layer_rule({ name = "overview-blur", match = { namespace = "^cobalt-overview$" }, blur = true })
 hl.layer_rule({ name = "menu-blur", match = { namespace = "^cobalt-menu$" }, blur = true, ignore_alpha = 0.2 })
