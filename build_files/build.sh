@@ -13,3 +13,14 @@ glib-compile-schemas /usr/share/glib-2.0/schemas
 
 # Our own icons (e.g. cobalt-caffeine-symbolic) in hicolor
 gtk-update-icon-cache -f /usr/share/icons/hicolor
+
+# Brand the OS as cobalt (About in Settings, boot menu entries). ID stays
+# fedora so dnf, toolbox and friends keep working.
+VERSION_ID="$(. /usr/lib/os-release && echo "$VERSION_ID")"
+sed -i \
+    -e 's/^NAME=.*/NAME="cobalt"/' \
+    -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"cobalt (Fedora Linux ${VERSION_ID})\"/" \
+    -e 's|^HOME_URL=.*|HOME_URL="https://github.com/tduarte/cobalt"|' \
+    /usr/lib/os-release
+grep -q '^VARIANT_ID=' /usr/lib/os-release && sed -i 's/^VARIANT_ID=.*/VARIANT_ID=cobalt/' /usr/lib/os-release \
+    || echo 'VARIANT_ID=cobalt' >> /usr/lib/os-release

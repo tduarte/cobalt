@@ -247,6 +247,41 @@ Hard-won facts:
   otherwise logs "out of tracking context").
 - A `Gtk.Picture`'s natural size is its texture's; thumbnails subclass it and
   override `vfunc_measure` (Appearance backgrounds).
+- **Keyboard shortcuts:** binds made with `bind(id, keys, action, opts)` in
+  `hyprland.lua` are editable. The config reads
+  `~/.config/cobalt/settings/binds.lua` (written by Settings from
+  `binds.json` next to it) before binding, keeps actions in the global
+  `cobalt` registry, writes `$XDG_RUNTIME_DIR/cobalt/binds.json` for Settings,
+  and `cobalt.rebind(id, keys|false)` / `cobalt.set_custom({...})` change
+  binds live over `hyprctl eval`. Mouse binds, media keys and the two-bind
+  Handy shortcut stay plain `hl.bind`. `Hyprland --verify-config` runs the
+  Lua, so it also rewrites the registry JSON.
+- The Set Shortcut dialog inhibits system shortcuts
+  (`Gdk.Toplevel.inhibit_system_shortcuts`) so Hyprland doesn't act on the
+  combo being captured.
+- **Mouse/keyboard:** Settings writes GNOME's peripherals and input-sources
+  keys and turns them into `settings/input.lua` (`lib/input.ts`).
+- **Notifications:** the shell follows GNOME's keys (`lib/notifications.ts`):
+  DND = `show-banners` off, per-app `org.gnome.desktop.notifications.application`
+  at `/org/gnome/desktop/notifications/application/<canonical id>/` (id =
+  desktop id, lowercase, non `[a-z0-9-]` → `-`); apps that notify are added
+  to `application-children`.
+- **Session services from GNOME:** `cobalt-session.target` pulls in
+  `xdg-desktop-autostart.target` (it refuses manual starts), localsearch,
+  evolution-alarm-notify, and gnome-settings-daemon plugins through
+  `cobalt-gsd@<plugin>.service` (their own units are tied to gnome-session).
+  `localsearch-3` needs `XDG_SESSION_CLASS` in systemd's environment.
+- **Portals:** dialogs (file chooser, app chooser, access, account, print,
+  wallpaper, lockdown) come from xdg-desktop-portal-gnome: GNOME's Files-based
+  file chooser floats as a dialog when an app passes its window.
+- Libadwaita titles (rows, groups) are markup: escape `&` (`lib/ui.ts` does
+  it for `group()`/`navRow()`).
+- **System pages:** hostname1, timedate1, locale1, AccountsService and
+  systemd over D-Bus with `ALLOW_INTERACTIVE_AUTHORIZATION` (polkit prompts
+  through hyprpolkitagent); passwords are hashed with `openssl passwd -6`.
+  `cobalt-session` exports `LC_*` from GNOME's `region` key like
+  gnome-session. `os-release` is branded cobalt in `build.sh` (ID stays
+  fedora).
 - Simulated Wi-Fi in the VM: `sudo modprobe mac80211_hwsim radios=3`, mark
   `wlan1`/`wlan2` unmanaged, run hostapd from an Alpine podman container
   (`--net=host --privileged --security-opt label=disable`). There's no DHCP,

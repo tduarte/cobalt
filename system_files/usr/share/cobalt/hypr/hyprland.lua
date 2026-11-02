@@ -55,7 +55,8 @@ hl.on("hyprland.start", function()
     -- (cobalt-session.target). systemd restarts each one if it crashes.
     -- (dbus-update-activation-environment isn't in the image.)
     hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE " ..
-        "HYPRLAND_INSTANCE_SIGNATURE XCURSOR_THEME XCURSOR_SIZE HYPRCURSOR_SIZE QT_QPA_PLATFORM ELECTRON_OZONE_PLATFORM_HINT; " ..
+        "HYPRLAND_INSTANCE_SIGNATURE XCURSOR_THEME XCURSOR_SIZE HYPRCURSOR_SIZE QT_QPA_PLATFORM ELECTRON_OZONE_PLATFORM_HINT " ..
+        "XDG_SESSION_CLASS XDG_SESSION_ID XDG_SESSION_DESKTOP; " ..
         "systemctl --user start cobalt-session.target")
     -- Handy (speech-to-text) in the background; hold Alt+Space to dictate
     hl.exec_cmd("handy --start-hidden")
@@ -225,63 +226,148 @@ hl.gesture({
 -- `desc` is "Category: Label"; the shortcut cheat sheet (Super+/) is generated
 -- from these, so every bind worth knowing gets one. Binds without desc (media
 -- keys) are left off the sheet.
+--
+-- Settings > Keyboard > Shortcuts can change or disable the binds made with
+-- bind() below: its changes are in ~/.config/cobalt/settings/binds.lua
+-- ({ [id] = "KEYS" | false, custom = { {name, command, keys}, ... } }), read
+-- here before binding. The registry (cobalt.binds) is written to
+-- $XDG_RUNTIME_DIR/cobalt/binds.json for Settings, and cobalt.rebind() lets it
+-- change a bind live through `hyprctl eval`.
 local mainMod = "SUPER"
 
-hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(overview), { release = true, desc = "System: Activities overview" })
-hl.bind(mainMod .. " + A", hl.dsp.exec_cmd(appGrid), { desc = "System: Show apps" })
-hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal), { desc = "System: Terminal" })
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { desc = "System: Files" })
-hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("ags request -i cobalt toggle date-menu"), { desc = "System: Notifications" })
-hl.bind(mainMod .. " + slash", hl.dsp.exec_cmd("ags request -i cobalt shortcuts"), { desc = "System: Keyboard shortcuts" })
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(lock), { desc = "System: Lock screen" })
-hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit(), { desc = "System: Log out" })
+cobalt = { binds = {}, by_id = {}, custom = {} }
+local shortcut_overrides = {}
+do
+    local config_home = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")
+    local ok, t = pcall(dofile, config_home .. "/cobalt/settings/binds.lua")
+    if ok and type(t) == "table" then shortcut_overrides = t end
+end
+
+-- `name` is the label in Settings (desc is shared by grouped binds on the sheet)
+local function bind(id, keys, action, opts)
+    opts = opts or {}
+    local hl_opts = {}
+    for k, v in pairs(opts) do
+        if k ~= "name" then hl_opts[k] = v end
+    end
+    local entry = { id = id, default = keys, keys = keys, action = action, opts = hl_opts, desc = opts.desc, name = opts.name }
+    local override = shortcut_overrides[id]
+    if override == false then
+        entry.keys = nil
+    elseif type(override) == "string" then
+        entry.keys = override
+    end
+    cobalt.binds[#cobalt.binds + 1] = entry
+    cobalt.by_id[id] = entry
+    if entry.keys then hl.bind(entry.keys, action, hl_opts) end
+end
+
+local function json_string(v)
+    return '"' .. tostring(v):gsub('[%c"\\]', function(c) return string.format("\\u%04x", c:byte()) end) .. '"'
+end
+
+function cobalt.write_binds()
+    local runtime = os.getenv("XDG_RUNTIME_DIR")
+    if not runtime then return end
+    os.execute("mkdir -p '" .. runtime .. "/cobalt'")
+    local rows = {}
+    for _, e in ipairs(cobalt.binds) do
+        rows[#rows + 1] = string.format('{"id":%s,"desc":%s,"name":%s,"default":%s,"keys":%s}',
+            json_string(e.id), json_string(e.desc or ""), json_string(e.name or ""),
+            json_string(e.default), e.keys and json_string(e.keys) or "null")
+    end
+    local f = io.open(runtime .. "/cobalt/binds.json", "w")
+    if f then
+        f:write("[" .. table.concat(rows, ",") .. "]")
+        f:close()
+    end
+end
+
+-- Change a bind live (keys = false disables it)
+function cobalt.rebind(id, keys)
+    local e = cobalt.by_id[id]
+    if not e then return end
+    if e.keys then hl.unbind(e.keys) end
+    e.keys = keys or nil
+    if e.keys then hl.bind(e.keys, e.action, e.opts) end
+    cobalt.write_binds()
+end
+
+-- Custom shortcuts (Settings > Keyboard > Shortcuts > Custom Shortcuts)
+function cobalt.set_custom(list)
+    for _, c in ipairs(cobalt.custom) do
+        if c.keys and c.keys ~= "" then hl.unbind(c.keys) end
+    end
+    cobalt.custom = list or {}
+    for _, c in ipairs(cobalt.custom) do
+        if c.keys and c.keys ~= "" and c.command and c.command ~= "" then
+            hl.bind(c.keys, hl.dsp.exec_cmd(c.command), { desc = "Custom Shortcuts: " .. (c.name or c.command) })
+        end
+    end
+end
+
+bind("overview", "SUPER + SUPER_L", hl.dsp.exec_cmd(overview), { release = true, desc = "System: Activities overview" })
+bind("show-apps", mainMod .. " + A", hl.dsp.exec_cmd(appGrid), { desc = "System: Show apps" })
+bind("terminal", mainMod .. " + Return", hl.dsp.exec_cmd(terminal), { desc = "Launchers: Terminal" })
+bind("files", mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { desc = "Launchers: Files" })
+bind("settings", mainMod .. " + I", hl.dsp.exec_cmd("cobalt-settings"), { desc = "Launchers: Settings" })
+bind("notifications", mainMod .. " + V", hl.dsp.exec_cmd("ags request -i cobalt toggle date-menu"), { desc = "System: Notifications" })
+bind("shortcuts", mainMod .. " + slash", hl.dsp.exec_cmd("ags request -i cobalt shortcuts"), { desc = "System: Keyboard shortcuts" })
+bind("lock", mainMod .. " + L", hl.dsp.exec_cmd(lock), { desc = "System: Lock screen" })
+bind("log-out", mainMod .. " + SHIFT + E", hl.dsp.exit(), { desc = "System: Log out" })
+bind("switch-input-source", mainMod .. " + space", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"), { desc = "Typing: Switch input source" })
 
 -- Dictation with Handy: hold Alt+Space to record, release to transcribe into
 -- the focused app. Handy's own shortcut is unreliable on Wayland, so Hyprland
--- toggles it on press and again on release.
+-- toggles it on press and again on release (two binds, so not editable).
 hl.bind("ALT + space", hl.dsp.exec_cmd("handy --toggle-transcription"), { desc = "System: Dictate (hold)" })
 hl.bind("ALT + space", hl.dsp.exec_cmd("handy --toggle-transcription"), { release = true })
 
 -- Screenshots (saved to ~/Pictures/Screenshots and copied)
-hl.bind("Print",         hl.dsp.exec_cmd("cobalt-screenshot area"),   { desc = "System: Screenshot area" })
-hl.bind("SHIFT + Print", hl.dsp.exec_cmd("cobalt-screenshot screen"), { desc = "System: Screenshot screen" })
+bind("screenshot-area", "Print", hl.dsp.exec_cmd("cobalt-screenshot area"), { desc = "Screenshots: Screenshot area" })
+bind("screenshot-screen", "SHIFT + Print", hl.dsp.exec_cmd("cobalt-screenshot screen"), { desc = "Screenshots: Screenshot screen" })
 
-hl.bind(mainMod .. " + Q", hl.dsp.window.close(), { desc = "Windows: Close window" })
-hl.bind("ALT + F4", hl.dsp.window.close(), { desc = "Windows: Close window" })
-hl.bind(mainMod .. " + Up", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }), { desc = "Windows: Maximize" })
-hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { desc = "Windows: Fullscreen" })
-hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }), { desc = "Windows: Toggle floating" })
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"), { desc = "Windows: Toggle split direction" })
+bind("close", mainMod .. " + Q", hl.dsp.window.close(), { desc = "Windows: Close window" })
+bind("close-alt", "ALT + F4", hl.dsp.window.close(), { desc = "Windows: Close window", name = "Close window (alternative)" })
+bind("maximize", mainMod .. " + Up", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }), { desc = "Windows: Maximize" })
+bind("fullscreen", mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { desc = "Windows: Fullscreen" })
+bind("float", mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }), { desc = "Windows: Toggle floating" })
+bind("toggle-split", mainMod .. " + J", hl.dsp.layout("togglesplit"), { desc = "Windows: Toggle split direction" })
 
 -- Alt+Tab cycles windows on the current workspace
-hl.bind("ALT + Tab", function()
+bind("switch-windows", "ALT + Tab", function()
     hl.dispatch(hl.dsp.window.cycle_next())
     hl.dispatch(hl.dsp.window.bring_to_top())
-end, { desc = "Windows: Switch windows" })
+end, { desc = "Navigation: Switch windows" })
 
 -- Focus and move windows (Super+Up is maximize, as in GNOME)
-for key, dir in pairs({ Left = "left", Right = "right", Down = "down" }) do
-    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ direction = dir }), { desc = "Windows: Move focus" })
-end
-for key, dir in pairs({ Left = "left", Right = "right", Up = "up", Down = "down" }) do
-    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ direction = dir }), { desc = "Windows: Move window" })
+local directions = { { "Left", "left" }, { "Right", "right" }, { "Up", "up" }, { "Down", "down" } }
+for _, d in ipairs(directions) do
+    local key, dir = d[1], d[2]
+    if key ~= "Up" then
+        bind("focus-" .. dir, mainMod .. " + " .. key, hl.dsp.focus({ direction = dir }), { desc = "Navigation: Move focus", name = "Move focus " .. dir })
+    end
+    bind("move-" .. dir, mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ direction = dir }), { desc = "Windows: Move window", name = "Move window " .. dir })
 end
 
--- Move/resize with Super + left/right drag
+-- Move/resize with Super + left/right drag (mouse binds aren't editable)
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true, desc = "Windows: Move window" })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, desc = "Windows: Resize window" })
 
 -- Workspaces: Super+1..9, Super+Page Up/Down, Super+scroll
 for i = 1, 9 do
-    hl.bind(mainMod .. " + " .. i,          hl.dsp.focus({ workspace = i }),       { desc = "Workspaces: Go to workspace" })
-    hl.bind(mainMod .. " + SHIFT + " .. i,  hl.dsp.window.move({ workspace = i }), { desc = "Workspaces: Move window to workspace" })
+    bind("workspace-" .. i, mainMod .. " + " .. i, hl.dsp.focus({ workspace = i }), { desc = "Navigation: Go to workspace", name = "Switch to workspace " .. i })
+    bind("move-to-workspace-" .. i, mainMod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }), { desc = "Navigation: Move window to workspace", name = "Move window to workspace " .. i })
 end
-hl.bind(mainMod .. " + Page_Up",           hl.dsp.focus({ workspace = "r-1" }),       { desc = "Workspaces: Previous workspace" })
-hl.bind(mainMod .. " + Page_Down",         hl.dsp.focus({ workspace = "r+1" }),       { desc = "Workspaces: Next workspace" })
-hl.bind(mainMod .. " + SHIFT + Page_Up",   hl.dsp.window.move({ workspace = "r-1" }), { desc = "Workspaces: Move window to previous workspace" })
-hl.bind(mainMod .. " + SHIFT + Page_Down", hl.dsp.window.move({ workspace = "r+1" }), { desc = "Workspaces: Move window to next workspace" })
-hl.bind(mainMod .. " + mouse_down",        hl.dsp.focus({ workspace = "e+1" }),       { desc = "Workspaces: Scroll through workspaces" })
-hl.bind(mainMod .. " + mouse_up",          hl.dsp.focus({ workspace = "e-1" }),       { desc = "Workspaces: Scroll through workspaces" })
+bind("workspace-previous", mainMod .. " + Page_Up", hl.dsp.focus({ workspace = "r-1" }), { desc = "Navigation: Previous workspace" })
+bind("workspace-next", mainMod .. " + Page_Down", hl.dsp.focus({ workspace = "r+1" }), { desc = "Navigation: Next workspace" })
+bind("move-to-workspace-previous", mainMod .. " + SHIFT + Page_Up", hl.dsp.window.move({ workspace = "r-1" }), { desc = "Navigation: Move window to previous workspace" })
+bind("move-to-workspace-next", mainMod .. " + SHIFT + Page_Down", hl.dsp.window.move({ workspace = "r+1" }), { desc = "Navigation: Move window to next workspace" })
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), { desc = "Navigation: Scroll through workspaces" })
+hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }), { desc = "Navigation: Scroll through workspaces" })
+
+cobalt.set_custom(shortcut_overrides.custom)
+cobalt.write_binds()
 
 -- Media and brightness keys
 -- swayosd-client changes the value and shows SwayOSD's on-screen display

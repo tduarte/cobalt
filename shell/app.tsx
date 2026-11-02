@@ -3,6 +3,7 @@ import { For, This, createBinding } from "ags"
 import { describeMenu, menuNames, toggleMenu } from "./lib/menus"
 import { followAccent } from "./lib/accent"
 import { startNightLight } from "./lib/nightlight"
+import { syncDoNotDisturb } from "./lib/notifications"
 import style from "./style.scss"
 import Bar from "./widget/Bar"
 import HotEdge from "./widget/HotEdge"
@@ -11,6 +12,7 @@ import { MenuBackdrop } from "./widget/PanelMenu"
 import QuickSettings from "./widget/QuickSettings"
 import Shortcuts, { toggleShortcuts } from "./widget/Shortcuts"
 import NotificationBanners from "./widget/NotificationBanners"
+import { expandNotifications } from "./widget/NotificationList"
 import Overview, { debugOverview, openFolderOverview, searchOverview, toggleOverview } from "./widget/overview"
 
 app.start({
@@ -32,6 +34,10 @@ app.start({
       else if (name === "folder") openFolderOverview(argv[2] ?? "")
       else toggleOverview()
       response("ok")
+    } else if (command === "notifications") {
+      // QA: notifications expand <app> | collapse
+      expandNotifications(name === "expand" ? argv.slice(2).join(" ") : null)
+      response("ok")
     } else if (command === "css") {
       // Dev: try CSS live, e.g. ags request -i cobalt css "button { color: red; }"
       app.apply_css(argv.slice(1).join(" "))
@@ -47,6 +53,7 @@ app.start({
   main() {
     followAccent()
     startNightLight()
+    syncDoNotDisturb()
     const monitors = createBinding(app, "monitors")
 
     NotificationBanners()

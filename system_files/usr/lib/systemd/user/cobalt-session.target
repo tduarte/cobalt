@@ -1,9 +1,17 @@
 # Everything that runs in the background of a cobalt session. hyprland.lua
 # starts it after importing the session environment into systemd; it stops
 # with Hyprland's own hyprland-session.target. Each service restarts on its
-# own when it crashes.
+# own when it crashes. (xdg-desktop-autostart.target refuses a manual start,
+# so it has to be pulled in from here, like gnome-session does.)
 [Unit]
 Description=cobalt session services
 PartOf=hyprland-session.target
 After=hyprland-session.target
+# GNOME's own session services (file search index, calendar reminders),
+# apps' XDG autostart entries, and the gnome-settings-daemon plugins that
+# work outside GNOME
+Wants=localsearch-3.service evolution-alarm-notify.service xdg-desktop-autostart.target
+Wants=cobalt-gsd@housekeeping.service cobalt-gsd@datetime.service cobalt-gsd@print-notifications.service
+Wants=cobalt-gsd@rfkill.service cobalt-gsd@smartcard.service cobalt-gsd@usb-protection.service
+Wants=cobalt-gsd@wwan.service cobalt-gsd@sound.service
 Wants=cobalt-shell.service hypridle.service hyprpaper.service cobalt-wallpaper.service hyprpolkitagent.service cobalt-clipboard.service cobalt-osd.service hyprsunset.service cobalt-idle.service cobalt-power-key.service

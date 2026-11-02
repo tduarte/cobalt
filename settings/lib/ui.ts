@@ -56,14 +56,18 @@ export function prefsPage(...groups: Gtk.Widget[]) {
   return p
 }
 
+// Titles are markup in libadwaita ("&" would blank them), so escape
 export function group(title = "", description = "") {
-  return new Adw.PreferencesGroup({ title, description })
+  return new Adw.PreferencesGroup({
+    title: GLib.markup_escape_text(title, -1),
+    description: GLib.markup_escape_text(description, -1),
+  })
 }
 
 // A row that opens something else (sub-page, dialog): title and a chevron,
 // with an optional dimmed value before the chevron ("Off >")
 export function navRow(title: string, onActivate: () => void, value?: string) {
-  const row = new Adw.ActionRow({ title, activatable: true })
+  const row = new Adw.ActionRow({ title: GLib.markup_escape_text(title, -1), activatable: true })
   if (value !== undefined) {
     const label = new Gtk.Label({ label: value })
     label.add_css_class("dim-label")
@@ -145,4 +149,57 @@ export function setRows(g: Adw.PreferencesGroup, rows: Gtk.Widget[], previous: G
   for (const r of previous) g.remove(r)
   for (const r of rows) g.add(r)
   return rows
+}
+
+// A searchable list in a dialog (time zones, languages, formats): pick one
+// and press the action button, or double-click a row
+export function pickDialog(opts: {
+  parent: Gtk.Widget
+  title: string
+  items: { id: string; label: string; detail?: string }[]
+  current?: string
+  action?: string
+  onPick: (id: string) => void
+}) {
+  const search = new Gtk.SearchEntry({ placeholderText: "Search", marginBottom: 6 })
+  const list = new Gtk.ListBox({ selectionMode: Gtk.SelectionMode.SINGLE })
+  list.add_css_class("boxed-list")
+  for (const item of opts.items) {
+    const row = new Adw.ActionRow({
+      title: GLib.markup_escape_text(item.label, -1),
+      subtitle: GLib.markup_escape_text(item.detail ?? "", -1),
+    })
+    if (item.id === opts.current) row.add_suffix(new Gtk.Image({ iconName: "object-select-symbolic" }))
+    list.append(row)
+  }
+  list.set_filter_func((row) => {
+    const q = search.text.trim().toLowerCase()
+    const item = opts.items[row.get_index()]
+    return !q || item.label.toLowerCase().includes(q) || (item.detail ?? "").toLowerCase().includes(q)
+  })
+  search.connect("search-changed", () => list.invalidate_filter())
+
+  const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 6, marginTop: 6, marginBottom: 12, marginStart: 12, marginEnd: 12 })
+  box.append(search)
+  box.append(new Gtk.ScrolledWindow({ child: list, vexpand: true, hscrollbarPolicy: Gtk.PolicyType.NEVER }))
+
+  const cancel = new Gtk.Button({ label: "_Cancel", useUnderline: true })
+  const ok = new Gtk.Button({ label: opts.action ?? "_Select", useUnderline: true, sensitive: false })
+  ok.add_css_class("suggested-action")
+  const dlg = dialog({ title: opts.title, content: box, width: 460, height: 560, start: cancel, end: ok })
+  list.connect("row-selected", (_, row) => (ok.sensitive = row !== null))
+  list.connect("row-activated", () => ok.activate())
+  cancel.connect("clicked", () => dlg.close())
+  search.connect("stop-search", () => {
+    if (!search.text) dlg.close()
+  })
+  ok.connect("clicked", () => {
+    const row = list.get_selected_row()
+    if (!row) return
+    dlg.close()
+    opts.onPick(opts.items[row.get_index()].id)
+  })
+  dlg.present(opts.parent)
+  search.grab_focus()
+  return dlg
 }

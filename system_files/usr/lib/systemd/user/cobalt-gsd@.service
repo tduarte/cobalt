@@ -1,0 +1,14 @@
+# gnome-settings-daemon plugins that work without GNOME Shell/Mutter (reuse
+# audit in docs/BRIEF.md). Their own units are tied to gnome-session, so
+# cobalt-session.target runs the binaries through this template:
+# cobalt-gsd@housekeeping.service runs /usr/libexec/gsd-housekeeping.
+[Unit]
+Description=GNOME settings daemon: %i
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/libexec/gsd-%i
+Restart=on-failure
+RestartSec=2
+Slice=session.slice

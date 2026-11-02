@@ -1,28 +1,38 @@
 import AstalNotifd from "gi://AstalNotifd"
 import GLib from "gi://GLib"
 import Gtk from "gi://Gtk?version=4.0"
-import { For, createBinding, createState } from "ags"
+import { createBinding, createState } from "ags"
 import { createPoll } from "ags/time"
 import { openMenu, toggleMenu } from "../lib/menus"
 import { interfaceSettings } from "../lib/system"
 import Calendar from "./Calendar"
 import MediaPlayers from "./MediaPlayers"
-import Notification from "./Notification"
+import NotificationList from "./NotificationList"
 import PanelMenu from "./PanelMenu"
 
 const now = createPoll<GLib.DateTime | null>(null, 1000, () => GLib.DateTime.new_now_local())
 
-// GNOME's clock format setting ("24h" / "12h"), so the Settings app can change it
+// GNOME's clock settings (Settings > System > Date & Time): 12/24 hours,
+// weekday, date and seconds, like "Sun Nov 1  10:30 PM"
+const CLOCK_KEYS = ["clock-format", "clock-show-weekday", "clock-show-date", "clock-show-seconds"]
+
 function clockFormat() {
-  return interfaceSettings.get_string("clock-format") === "12h"
-    ? "%b %-d  %-I:%M %p"
-    : "%b %-d  %H:%M"
+  const twelve = interfaceSettings.get_string("clock-format") === "12h"
+  const seconds = interfaceSettings.get_boolean("clock-show-seconds") ? ":%S" : ""
+  const time = twelve ? `%-I:%M${seconds} %p` : `%H:%M${seconds}`
+  const day = [
+    interfaceSettings.get_boolean("clock-show-weekday") ? "%a" : "",
+    interfaceSettings.get_boolean("clock-show-date") ? "%b %-d" : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+  return day ? `${day}  ${time}` : time
 }
 
 // Center of the top bar: the clock (a moon shows Do Not Disturb is on)
 export function DateMenuButton() {
   const [format, setFormat] = createState(clockFormat())
-  interfaceSettings.connect("changed::clock-format", () => setFormat(clockFormat()))
+  for (const key of CLOCK_KEYS) interfaceSettings.connect(`changed::${key}`, () => setFormat(clockFormat()))
   const dnd = createBinding(AstalNotifd.get_default(), "dontDisturb")
 
   return (
@@ -49,15 +59,7 @@ export default function DateMenu() {
       <box spacing={16}>
         <box class="date-menu-left" orientation={Gtk.Orientation.VERTICAL} spacing={10} widthRequest={400}>
           <MediaPlayers />
-          <box
-            orientation={Gtk.Orientation.VERTICAL}
-            spacing={8}
-            visible={notifications((ns) => ns.length > 0)}
-          >
-            <For each={notifications((ns) => [...ns].sort((a, b) => b.time - a.time))}>
-              {(n: AstalNotifd.Notification) => <Notification notification={n} />}
-            </For>
-          </box>
+          <NotificationList />
           <box
             class="no-notifications"
             orientation={Gtk.Orientation.VERTICAL}

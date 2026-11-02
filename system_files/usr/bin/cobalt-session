@@ -3,4 +3,13 @@
 # with the image; personal overrides go in ~/.config/cobalt/hyprland.lua, which
 # the system config loads last.
 
+# Formats from Settings > System > Region & Language (GNOME's region key);
+# gnome-session does the same for GNOME. Language (LANG) comes from GDM.
+region="$(gsettings get org.gnome.system.locale region 2>/dev/null | tr -d "'")"
+if [[ -n "$region" ]]; then
+    for var in LC_NUMERIC LC_TIME LC_MONETARY LC_PAPER LC_MEASUREMENT LC_NAME LC_ADDRESS LC_TELEPHONE LC_IDENTIFICATION; do
+        export "$var=$region"
+    done
+fi
+
 exec /usr/bin/start-hyprland -- --config /usr/share/cobalt/hypr/hyprland.lua

@@ -61,3 +61,10 @@
 .night-light-temperature highlight {
   background: none;
 }
+
+/* About: the OS name in place of a logo */
+.os-logo {
+  font-size: 36pt;
+  font-weight: 800;
+  letter-spacing: -1px;
+}

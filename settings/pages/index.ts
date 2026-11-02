@@ -1,13 +1,18 @@
 import Adw from "gi://Adw?version=1"
 import AstalNetwork from "gi://AstalNetwork"
 import AppearancePage from "./appearance"
+import AppsPage from "./apps"
 import BluetoothPage from "./bluetooth"
 import DisplaysPage from "./displays"
+import KeyboardPage from "./keyboard"
+import MousePage from "./mouse"
 import MultitaskingPage from "./multitasking"
 import NetworkPage from "./network"
-import Placeholder from "./placeholder"
+import NotificationsPage from "./notifications"
 import PowerPage from "./power"
+import PrivacyPage from "./privacy"
 import SoundPage from "./sound"
+import SystemPage from "./system"
 import WifiPage from "./wifi"
 
 export type PageContext = {
@@ -31,11 +36,9 @@ export type PageDef = {
   build: (ctx: PageContext) => Adw.NavigationPage
 }
 
-const soon = (title: string, icon: string) => () => Placeholder({ title, icon })
-
-// GNOME Settings' sidebar, in its order. Pages with no backend outside GNOME
-// Shell (Online Accounts, Sharing, Color Management, Printers, Remote Desktop)
-// and Wellbeing are left out for now (docs/BRIEF.md).
+// GNOME Settings' sidebar, in its order. Descoped pages (docs/BRIEF.md) are
+// left out: Search, Online Accounts, Sharing, Wellbeing, Color Management,
+// Printers, Accessibility (and Remote Desktop under System).
 export const PAGES: PageDef[] = [
   {
     id: "wifi",
@@ -102,12 +105,52 @@ export const PAGES: PageDef[] = [
     keywords: ["accent", "color", "background", "wallpaper", "theme"],
     build: AppearancePage,
   },
-  { id: "applications", title: "Apps", icon: "org.gnome.Settings-applications-symbolic", group: 2, build: soon("Apps", "org.gnome.Settings-applications-symbolic") },
-  { id: "notifications", title: "Notifications", icon: "org.gnome.Settings-notifications-symbolic", group: 2, build: soon("Notifications", "org.gnome.Settings-notifications-symbolic") },
-  { id: "search", title: "Search", icon: "org.gnome.Settings-search-symbolic", group: 2, build: soon("Search", "org.gnome.Settings-search-symbolic") },
-  { id: "mouse", title: "Mouse & Touchpad", icon: "org.gnome.Settings-mouse-symbolic", group: 3, build: soon("Mouse & Touchpad", "org.gnome.Settings-mouse-symbolic") },
-  { id: "keyboard", title: "Keyboard", icon: "org.gnome.Settings-keyboard-symbolic", group: 3, build: soon("Keyboard", "org.gnome.Settings-keyboard-symbolic") },
-  { id: "universal-access", title: "Accessibility", icon: "org.gnome.Settings-accessibility-symbolic", group: 4, build: soon("Accessibility", "org.gnome.Settings-accessibility-symbolic") },
-  { id: "privacy", title: "Privacy & Security", icon: "org.gnome.Settings-privacy-symbolic", group: 4, build: soon("Privacy & Security", "org.gnome.Settings-privacy-symbolic") },
-  { id: "system", title: "System", icon: "org.gnome.Settings-system-symbolic", group: 4, build: soon("System", "org.gnome.Settings-system-symbolic") },
+  {
+    id: "applications",
+    title: "Apps",
+    icon: "org.gnome.Settings-applications-symbolic",
+    group: 2,
+    keywords: ["default apps", "browser", "mail", "music", "video", "photos"],
+    build: AppsPage,
+  },
+  {
+    id: "notifications",
+    title: "Notifications",
+    icon: "org.gnome.Settings-notifications-symbolic",
+    group: 2,
+    keywords: ["do not disturb", "banners", "popups"],
+    build: NotificationsPage,
+  },
+  {
+    id: "mouse",
+    title: "Mouse & Touchpad",
+    icon: "org.gnome.Settings-mouse-symbolic",
+    group: 3,
+    keywords: ["pointer", "speed", "acceleration", "scroll", "touchpad", "tap", "left handed"],
+    build: MousePage,
+  },
+  {
+    id: "keyboard",
+    title: "Keyboard",
+    icon: "org.gnome.Settings-keyboard-symbolic",
+    group: 3,
+    keywords: ["layout", "input source", "shortcuts", "keybindings", "compose"],
+    build: KeyboardPage,
+  },
+  {
+    id: "privacy",
+    title: "Privacy & Security",
+    icon: "org.gnome.Settings-privacy-symbolic",
+    group: 4,
+    keywords: ["lock", "location", "camera", "microphone", "history", "trash"],
+    build: PrivacyPage,
+  },
+  {
+    id: "system",
+    title: "System",
+    icon: "org.gnome.Settings-system-symbolic",
+    group: 4,
+    keywords: ["about", "users", "date", "time", "time zone", "language", "region", "ssh", "hostname", "device name"],
+    build: SystemPage,
+  },
 ]

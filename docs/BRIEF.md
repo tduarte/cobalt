@@ -231,6 +231,13 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 
 - **Reuse audit:** done 2026-11-01; findings and decisions in "Reuse audit"
   below.
+- SSH agent: gnome-keyring's SSH component is GNOME-only and gcr-ssh-agent
+  isn't wired up (SSH_AUTH_SOCK); decide whether the session should provide
+  an agent.
+- Default Apps: GNOME's "Other" content types sub-page.
+- Remote viewing of the dev VM (and later Settings > Remote Desktop): wayvnc in
+  the image, port forwarded to the PC's LAN address, a host firewall rule
+  (user's call); macOS Screen Sharing can't use wayvnc's auth.
 - Displays: arrangement of several monitors (drag to position, primary
   display); today each monitor is configured on its own.
 - Sound: alert sound picker and System Sounds volume (nothing plays alert

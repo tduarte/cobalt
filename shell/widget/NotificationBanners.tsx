@@ -2,14 +2,18 @@ import app from "ags/gtk4/app"
 import { Astal, Gtk } from "ags/gtk4"
 import AstalNotifd from "gi://AstalNotifd"
 import GLib from "gi://GLib"
-import { For, createState, onCleanup } from "ags"
+import { For, createComputed, createState, onCleanup } from "ags"
 import Notification from "./Notification"
+import { policyFor } from "../lib/notifications"
+import { openMenu } from "../lib/menus"
 
 const BANNER_TIMEOUT_MS = 5000
 
 // GNOME-style banners: new notifications slide in at the top center of the
 // focused monitor, then hide after a few seconds (they stay in the date menu
-// until dismissed). Do Not Disturb hides banners except critical ones.
+// until dismissed). Do Not Disturb hides banners except critical ones, and
+// per-app settings (Settings > Notifications) can drop an app's notifications
+// or just its banners.
 export default function NotificationBanners() {
   const notifd = AstalNotifd.get_default()
   const [banners, setBanners] = createState(new Array<AstalNotifd.Notification>())
@@ -20,6 +24,12 @@ export default function NotificationBanners() {
     const n = notifd.get_notification(id)
     if (!n) return
     const critical = n.urgency === AstalNotifd.Urgency.CRITICAL
+    const policy = policyFor(n)
+    if (!policy.show) {
+      n.dismiss()
+      return
+    }
+    if (!policy.banner && !critical) return
     if (notifd.dontDisturb && !critical) return
 
     if (replaced && banners.get().some((b) => b.id === id)) {
@@ -52,7 +62,8 @@ export default function NotificationBanners() {
       application={app}
       layer={Astal.Layer.OVERLAY}
       anchor={Astal.WindowAnchor.TOP}
-      visible={banners((ns) => ns.length > 0)}
+      // Like GNOME, no banners while the notification list is open
+      visible={createComputed(() => banners().length > 0 && openMenu() !== "date-menu")}
     >
       <box orientation={Gtk.Orientation.VERTICAL} spacing={8}>
         <For each={banners}>
