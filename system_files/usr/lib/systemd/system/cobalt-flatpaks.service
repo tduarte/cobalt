@@ -1,0 +1,14 @@
+[Unit]
+Description=Install cobalt's Flathub apps
+Wants=network-online.target
+After=network-online.target flatpak-add-fedora-repos.service
+ConditionPathExists=/usr/bin/flatpak
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/cobalt-flatpaks
+# Retry on the next boot if the network was down
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

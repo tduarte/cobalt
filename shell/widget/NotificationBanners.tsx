@@ -1,5 +1,6 @@
 import app from "ags/gtk4/app"
 import { Astal, Gtk } from "ags/gtk4"
+import AstalHyprland from "gi://AstalHyprland"
 import AstalNotifd from "gi://AstalNotifd"
 import GLib from "gi://GLib"
 import { For, createComputed, createState, onCleanup } from "ags"
@@ -9,9 +10,22 @@ import { openMenu } from "../lib/menus"
 
 const BANNER_TIMEOUT_MS = 5000
 
+// Like GNOME, no banners over a fullscreen window (a game, a video); the
+// notification still goes to the date menu. Hyprland's fullscreen state:
+// 0 none, 1 maximized, 2 fullscreen, 3 both.
+function fullscreenFocused() {
+  try {
+    const w = JSON.parse(AstalHyprland.get_default().message("j/activewindow"))
+    return (w?.fullscreen ?? 0) >= 2
+  } catch {
+    return false
+  }
+}
+
 // GNOME-style banners: new notifications slide in at the top center of the
 // focused monitor, then hide after a few seconds (they stay in the date menu
-// until dismissed). Do Not Disturb hides banners except critical ones, and
+// until dismissed). Do Not Disturb and fullscreen windows hide banners
+// except critical ones, and
 // per-app settings (Settings > Notifications) can drop an app's notifications
 // or just its banners.
 export default function NotificationBanners() {
@@ -31,6 +45,7 @@ export default function NotificationBanners() {
     }
     if (!policy.banner && !critical) return
     if (notifd.dontDisturb && !critical) return
+    if (fullscreenFocused() && !critical) return
 
     if (replaced && banners.get().some((b) => b.id === id)) {
       setBanners((ns) => ns.map((b) => (b.id === id ? n : b)))

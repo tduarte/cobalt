@@ -1,27 +1,72 @@
 #!/usr/bin/bash
-# Screenshot helper for the Print bindings: `area` (select with the mouse) or
-# `screen` (focused monitor). Copies to the clipboard and saves to
-# ~/Pictures/Screenshots, like GNOME.
+# Screenshots, like GNOME: `area` (select with the mouse), `window` (click a
+# window), `active` (the focused window, no selection) or `screen` (the
+# focused monitor). `--cursor` includes the pointer. The picture is copied
+# to the clipboard, saved to ~/Pictures/Screenshots and announced with a
+# notification that opens it. The shell's screenshot UI (Print) calls this.
 
 set -euo pipefail
+
+mode="area"
+cursor=()
+for arg in "$@"; do
+    case "$arg" in
+        --cursor) cursor=(-c) ;;
+        area|window|active|screen) mode="$arg" ;;
+        *)
+            echo "usage: cobalt-screenshot [area|window|active|screen] [--cursor]" >&2
+            exit 2
+            ;;
+    esac
+done
 
 dir="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Screenshots"
 mkdir -p "$dir"
 file="$dir/Screenshot From $(date '+%Y-%m-%d %H-%M-%S').png"
 
-case "${1:-area}" in
+# Windows on the visible workspaces, as slurp boxes ("x,y wxh")
+window_boxes() {
+    local visible
+    visible="$(hyprctl monitors -j | jq -c '[.[].activeWorkspace.id]')"
+    hyprctl clients -j | jq -r --argjson ws "$visible" \
+        '.[] | select(.mapped and (.hidden | not) and (.workspace.id as $id | $ws | index($id))) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"'
+}
+
+case "$mode" in
     area)
         geometry="$(slurp)" || exit 0
-        grim -g "$geometry" "$file"
+        grim "${cursor[@]}" -g "$geometry" "$file"
+        ;;
+    window)
+        geometry="$(window_boxes | slurp -r)" || exit 0
+        grim "${cursor[@]}" -g "$geometry" "$file"
+        ;;
+    active)
+        geometry="$(hyprctl activewindow -j | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')"
+        grim "${cursor[@]}" -g "$geometry" "$file"
         ;;
     screen)
         monitor="$(hyprctl activeworkspace -j | jq -r '.monitor')"
-        grim -o "$monitor" "$file"
-        ;;
-    *)
-        echo "usage: cobalt-screenshot [area|screen]" >&2
-        exit 2
+        grim "${cursor[@]}" -o "$monitor" "$file"
         ;;
 esac
 
 wl-copy --type image/png < "$file"
+
+# GNOME's notification; clicking it opens the picture
+(
+    action="$(notify-send \
+        --app-name="Screenshot" \
+        --app-icon=camera-photo-symbolic \
+        --hint="string:image-path:$file" \
+        --action=default=Show \
+        --action=folder="Show in Files" \
+        "Screenshot captured" "You can paste the image from the clipboard.")" || exit 0
+    case "$action" in
+        default) gio open "$file" ;;
+        folder) gdbus call --session --dest org.freedesktop.FileManager1 \
+            --object-path /org/freedesktop/FileManager1 \
+            --method org.freedesktop.FileManager1.ShowItems "['file://${file// /%20}']" "" >/dev/null ;;
+    esac
+) >/dev/null 2>&1 &
+disown

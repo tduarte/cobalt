@@ -20,8 +20,10 @@ export function xkbLayouts() {
   return { layouts: layouts.join(","), variants: variants.join(",") }
 }
 
+// GNOME's "default" is libinput's default, which is adaptive for mice;
+// Hyprland rejects an empty profile
 function accelProfile(profile: string) {
-  return profile === "flat" ? "flat" : profile === "adaptive" ? "adaptive" : ""
+  return profile === "flat" ? "flat" : "adaptive"
 }
 
 export function inputConfig() {

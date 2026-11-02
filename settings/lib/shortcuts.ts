@@ -101,6 +101,7 @@ const KEY_LABELS: Record<string, string> = {
   Return: "Enter",
   space: "Space",
   slash: "/",
+  grave: "`",
   Page_Up: "Page Up",
   Page_Down: "Page Down",
   Print: "Print",

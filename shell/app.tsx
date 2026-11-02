@@ -4,13 +4,17 @@ import { describeMenu, menuNames, toggleMenu } from "./lib/menus"
 import { followAccent } from "./lib/accent"
 import { startNightLight } from "./lib/nightlight"
 import { syncDoNotDisturb } from "./lib/notifications"
+import { checkUpdates, watchUpdates } from "./lib/updates"
 import style from "./style.scss"
 import Bar from "./widget/Bar"
 import HotEdge from "./widget/HotEdge"
 import DateMenu from "./widget/DateMenu"
+import EndSession, { endSession, type EndKind } from "./widget/EndSession"
 import { MenuBackdrop } from "./widget/PanelMenu"
 import QuickSettings from "./widget/QuickSettings"
+import ScreenshotUI, { setRecordingState, syncRecording, toggleScreenshotUI } from "./widget/ScreenshotUI"
 import Shortcuts, { toggleShortcuts } from "./widget/Shortcuts"
+import Switcher, { switcher } from "./widget/Switcher"
 import NotificationBanners from "./widget/NotificationBanners"
 import { expandNotifications } from "./widget/NotificationList"
 import Overview, { debugOverview, openFolderOverview, searchOverview, toggleOverview } from "./widget/overview"
@@ -23,7 +27,27 @@ app.start({
   // `ags request -i cobalt toggle <menu> [sub-menu]` opens/closes a panel menu
   requestHandler(argv: string[], response: (response: string) => void) {
     const [command, name, subMenu] = argv
-    if (command === "shortcuts") {
+    if (command === "session" && ["logout", "restart", "poweroff"].includes(name)) {
+      // Log Out / Restart / Power Off dialog (keybinds, power button)
+      endSession(name as EndKind)
+      response("ok")
+    } else if (command === "screenshot") {
+      // Print: GNOME's screenshot UI (stops a running screencast instead)
+      toggleScreenshotUI()
+      response("ok")
+    } else if (command === "recording") {
+      // From cobalt-screenrecord: recording start | stop
+      setRecordingState(name === "start")
+      response("ok")
+    } else if (command === "updates") {
+      // QA: look for a staged OS update now
+      checkUpdates(() => endSession("restart"))
+      response("ok")
+    } else if (command === "switcher") {
+      // Alt+Tab: switcher next | prev | app-window
+      switcher(name ?? "next")
+      response("ok")
+    } else if (command === "shortcuts") {
       toggleShortcuts()
       response("ok")
     } else if (command === "overview") {
@@ -54,6 +78,7 @@ app.start({
     followAccent()
     startNightLight()
     syncDoNotDisturb()
+    watchUpdates(() => endSession("restart"))
     const monitors = createBinding(app, "monitors")
 
     NotificationBanners()
@@ -63,6 +88,10 @@ app.start({
     Overview()
     HotEdge()
     Shortcuts()
+    EndSession()
+    Switcher()
+    ScreenshotUI()
+    syncRecording()
 
     return (
       <For each={monitors}>

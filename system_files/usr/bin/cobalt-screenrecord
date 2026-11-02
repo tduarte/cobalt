@@ -1,0 +1,105 @@
+#!/usr/bin/bash
+# Screen recording with gpu-screen-recorder, like GNOME's screencasts:
+#   cobalt-screenrecord start area|window|screen [--cursor]
+#   cobalt-screenrecord stop | toggle | status
+# The recorder runs as the transient user unit cobalt-screenrecord.service,
+# so it survives shell restarts; the shell shows the red indicator in the bar
+# (told over `ags request`). Videos go to ~/Videos/Screencasts.
+
+set -euo pipefail
+
+unit=cobalt-screenrecord.service
+
+running() { systemctl --user is-active --quiet "$unit"; }
+
+tell_shell() { ags request -i cobalt recording "$1" >/dev/null 2>&1 || true; }
+
+# Windows on the visible workspaces, as slurp boxes ("x,y wxh")
+window_boxes() {
+    local visible
+    visible="$(hyprctl monitors -j | jq -c '[.[].activeWorkspace.id]')"
+    hyprctl clients -j | jq -r --argjson ws "$visible" \
+        '.[] | select(.mapped and (.hidden | not) and (.workspace.id as $id | $ws | index($id))) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"'
+}
+
+# slurp's "x,y wxh" → gpu-screen-recorder's "WxH+X+Y"
+to_region() { sed -E 's/^(-?[0-9]+),(-?[0-9]+) ([0-9]+)x([0-9]+)$/\3x\4+\1+\2/'; }
+
+start() {
+    local mode="${1:-screen}" cursor="no" target=() geometry
+    [[ "${2:-}" == "--cursor" ]] && cursor="yes"
+    running && exit 0
+    case "$mode" in
+        area)
+            geometry="$(slurp)" || exit 0
+            target=(-w region -region "$(to_region <<< "$geometry")")
+            ;;
+        window)
+            geometry="$(window_boxes | slurp -r)" || exit 0
+            target=(-w region -region "$(to_region <<< "$geometry")")
+            ;;
+        screen)
+            target=(-w "$(hyprctl activeworkspace -j | jq -r '.monitor')")
+            ;;
+        *) echo "unknown mode: $mode" >&2; exit 2 ;;
+    esac
+    systemd-run --user --quiet --collect --unit="$unit" --slice=app-graphical.slice \
+        "$0" run "$cursor" "${target[@]}"
+}
+
+# Inside the unit: record until SIGINT, then announce the video
+run() {
+    local cursor="$1"; shift
+    local dir file pid
+    dir="$(xdg-user-dir VIDEOS 2>/dev/null || echo "$HOME/Videos")/Screencasts"
+    mkdir -p "$dir"
+    file="$dir/Screencast From $(date '+%Y-%m-%d %H-%M-%S').mp4"
+
+    trap 'kill -INT "$pid" 2>/dev/null || true' INT TERM
+    tell_shell start
+    gpu-screen-recorder "$@" -f 60 -cursor "$cursor" -o "$file" &
+    pid=$!
+    sleep 2
+    # No hardware encoder (VMs): record on the CPU instead
+    if ! kill -0 "$pid" 2>/dev/null; then
+        gpu-screen-recorder "$@" -f 30 -cursor "$cursor" -encoder cpu -o "$file" &
+        pid=$!
+    fi
+    wait "$pid" || true
+    # wait returns early when a signal arrives; let the recorder finish the file
+    while kill -0 "$pid" 2>/dev/null; do sleep 0.2; done
+    tell_shell stop
+
+    # The notification waits for a click; give it its own unit so this one
+    # (and "recording" in status) ends now
+    if [[ -s "$file" ]]; then systemd-run --user --quiet --collect "$0" notify "$file"; fi
+}
+
+# GNOME's notification; clicking it opens the video
+notify() {
+    local file="$1" action
+    action="$(notify-send \
+        --app-name="Screenshot" \
+        --app-icon=camera-video-symbolic \
+        --action=default=Show \
+        --action=folder="Show in Files" \
+        "Screencast recorded" "Click here to view the video.")" || exit 0
+    case "$action" in
+        default) gio open "$file" ;;
+        folder) gdbus call --session --dest org.freedesktop.FileManager1 \
+            --object-path /org/freedesktop/FileManager1 \
+            --method org.freedesktop.FileManager1.ShowItems "['file://${file// /%20}']" "" >/dev/null ;;
+    esac
+}
+
+stop() { running && systemctl --user kill --kill-whom=main --signal=SIGINT "$unit" || true; }
+
+case "${1:-}" in
+    start) shift; start "$@" ;;
+    stop) stop ;;
+    toggle) if running; then stop; else start screen; fi ;;
+    status) running && echo recording || echo idle ;;
+    run) shift; run "$@" ;;
+    notify) notify "$2" ;;
+    *) echo "usage: cobalt-screenrecord start area|window|screen [--cursor] | stop | toggle | status" >&2; exit 2 ;;
+esac

@@ -60,6 +60,15 @@ dnf5 -y install \
 # On-screen display for the volume/brightness keys (Terra)
 dnf5 -y install SwayOSD
 
+# Screen recording for the screenshot UI (Terra; records on the GPU)
+dnf5 -y install gpu-screen-recorder
+
+# App store: GNOME Software with its rpm-ostree plugin (Flatpaks and the OS
+# image). Updates are staged by rpm-ostreed-automatic and flatpak's timer;
+# the shell tells the user when one is ready (zz1-cobalt.gschema.override
+# turns off GNOME Software's own downloads and notifications).
+dnf5 -y install gnome-software gnome-software-rpm-ostree
+
 # Settings app backends: NetworkManager VPN plugins with their GTK 4 editors
 # (Add VPN), libnma for them, and qrencode for sharing Wi-Fi as a QR code
 dnf5 -y install \

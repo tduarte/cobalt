@@ -25,6 +25,7 @@ const KEY_NAMES: Record<string, string> = {
   SUPER_L: "",
   Return: "Enter",
   slash: "/",
+  grave: "`",
   Page_Up: "Page Up",
   Page_Down: "Page Down",
   Up: "↑",
@@ -82,6 +83,21 @@ function toSections(binds: Bind[]): Section[] {
       title,
       rows: [...rows.entries()].map(([label, keys]) => ({ label, keys: mergeKeys(keys) })),
     }))
+}
+
+// Sections in a fixed number of columns, each going to the shortest column
+// so far (one column per section ran off the screen)
+const COLUMNS = 4
+
+function toColumns(sections: Section[]): Section[][] {
+  const columns: Section[][] = Array.from({ length: Math.min(COLUMNS, sections.length) }, () => [])
+  const heights = columns.map(() => 0)
+  for (const section of sections) {
+    const i = heights.indexOf(Math.min(...heights))
+    columns[i].push(section)
+    heights[i] += section.rows.reduce((n, r) => n + r.keys.length, 0) + 2
+  }
+  return columns
 }
 
 const [visible, setVisible] = createState(false)
@@ -154,18 +170,22 @@ export default function Shortcuts() {
         >
           <label class="shortcuts-title" label="Keyboard Shortcuts" />
           <box spacing={40} homogeneous>
-            <For each={sections}>
-              {(section: Section) => (
-                <box orientation={Gtk.Orientation.VERTICAL} spacing={6} valign={Gtk.Align.START}>
-                  <label class="section-title" label={section.title} xalign={0} />
-                  {section.rows.map((row) => (
-                    <box class="shortcut-row" spacing={16}>
-                      <label label={row.label} xalign={0} hexpand wrap maxWidthChars={22} />
-                      <box orientation={Gtk.Orientation.VERTICAL} spacing={4} halign={Gtk.Align.END}>
-                        {row.keys.map((caps) => (
-                          <Combo caps={caps} />
-                        ))}
-                      </box>
+            <For each={sections(toColumns)}>
+              {(column: Section[]) => (
+                <box orientation={Gtk.Orientation.VERTICAL} spacing={20} valign={Gtk.Align.START}>
+                  {column.map((section) => (
+                    <box orientation={Gtk.Orientation.VERTICAL} spacing={6}>
+                      <label class="section-title" label={section.title} xalign={0} />
+                      {section.rows.map((row) => (
+                        <box class="shortcut-row" spacing={16}>
+                          <label label={row.label} xalign={0} hexpand wrap maxWidthChars={22} />
+                          <box orientation={Gtk.Orientation.VERTICAL} spacing={4} halign={Gtk.Align.END}>
+                            {row.keys.map((caps) => (
+                              <Combo caps={caps} />
+                            ))}
+                          </box>
+                        </box>
+                      ))}
                     </box>
                   ))}
                 </box>

@@ -1,0 +1,3 @@
+# Flathub apps cobalt installs system-wide (cobalt-flatpaks.service). Apps
+# removed from this list stay installed; uninstall them by hand.
+io.missioncenter.MissionCenter

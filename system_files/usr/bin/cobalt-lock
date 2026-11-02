@@ -1,8 +1,47 @@
 #!/usr/bin/bash
 # Lock the screen with hyprlock in the current accent color (Settings >
-# Appearance). hyprlock only reads its config at start, so write a copy with
-# the accent filled in; if anything goes wrong, lock with the stock config.
-# Locking must never fail because of a color.
+# Appearance), with your avatar and name. hyprlock only reads its config at
+# start, so write a copy with those filled in; if anything goes wrong, lock
+# with the stock config. Locking must never fail because of a color.
+#
+# The lock screen's widgets also call back into this script:
+#   cobalt-lock media            what's playing, for the label at the bottom
+#   cobalt-lock power <action>   Restart / Power Off buttons (restart|poweroff)
+
+media() {
+    playerctl metadata --format '{{ title }}{{ " — " }}{{ artist }}' 2>/dev/null |
+        sed -E 's/ — $//' | head -c 120
+    if [[ "$(playerctl status 2>/dev/null)" == "Playing" ]]; then echo "   ⏸"; else
+        [[ -n "$(playerctl metadata title 2>/dev/null)" ]] && echo "   ▶"
+    fi
+}
+
+# Like the end session dialog: ask every window to close and only go ahead
+# if they all do. Behind the lock nobody can answer "Save changes?", so an
+# app with unsaved work stops the restart instead of losing it.
+power() {
+    local action="$1"
+    [[ "$action" == restart || "$action" == poweroff ]] || exit 2
+    hyprctl clients -j | jq -r '.[].address' | while read -r address; do
+        hyprctl dispatch "hl.dsp.window.close({ window = \"address:$address\" })" >/dev/null
+    done
+    for _ in $(seq 20); do
+        [[ "$(hyprctl clients -j | jq length)" == 0 ]] && break
+        sleep 0.25
+    done
+    if [[ "$(hyprctl clients -j | jq length)" != 0 ]]; then
+        notify-send --app-name="System" --app-icon=system-shutdown-symbolic \
+            "$([[ "$action" == restart ]] && echo "Restart" || echo "Power off") canceled" \
+            "An app is still open. Save your work and try again."
+        exit 1
+    fi
+    systemctl "$([[ "$action" == restart ]] && echo reboot || echo poweroff)"
+}
+
+case "${1:-}" in
+    media) media; exit 0 ;;
+    power) power "${2:-}"; exit $? ;;
+esac
 
 pidof hyprlock >/dev/null && exit 0
 
@@ -22,8 +61,48 @@ case "$(gsettings get org.gnome.desktop.interface accent-color 2>/dev/null)" in
     *) rgb="53, 132, 228" ;;
 esac
 
+# Your name (full name, else the user name) and picture (Settings > Users
+# keeps it in AccountsService; ~/.face is the old place)
+name="$(getent passwd "$USER" | cut -d: -f5 | cut -d, -f1)"
+name="${name:-$USER}"
+avatar=""
+for f in "/var/lib/AccountsService/icons/$USER" "$HOME/.face"; do
+    [[ -r "$f" && -s "$f" ]] && { avatar="$f"; break; }
+done
+
+user_widgets() {
+    if [[ -n "$avatar" ]]; then
+        cat <<EOF
+
+image {
+    monitor =
+    path = $avatar
+    size = 112
+    rounding = -1
+    border_size = 0
+    position = 0, 80
+    halign = center
+    valign = center
+}
+EOF
+    fi
+    cat <<EOF
+
+label {
+    monitor =
+    text = ${name//$/}
+    font_size = 18
+    font_family = \$font Bold
+    color = rgba(255, 255, 255, 0.95)
+    position = 0, $([[ -n "$avatar" ]] && echo -10 || echo 0)
+    halign = center
+    valign = center
+}
+EOF
+}
+
 if mkdir -p "${config%/*}" &&
-    sed "s/check_color = rgba(53, 132, 228, 0.9)/check_color = rgba($rgb, 0.9)/" "$base" > "$config.tmp" &&
+    { sed "s/check_color = rgba(53, 132, 228, 0.9)/check_color = rgba($rgb, 0.9)/" "$base"; user_widgets; } > "$config.tmp" &&
     mv "$config.tmp" "$config"; then
     exec hyprlock --config "$config"
 fi

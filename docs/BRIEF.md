@@ -222,8 +222,46 @@ gaps, blur and translucency on shell surfaces, livelier animations.
      and the Search page, IBus input methods, per-window layouts, Device
      Security, Thunderbolt, problem reporting, Printers, Sharing, Color
      Management, Online Accounts, Wellbeing
-6. Welcome (first-boot checklist script).
-7. Switch the main PC with `bootc switch` (rollback to Bazzite available).
+6. **Everyday shell** (from the DE gap review, decision 2026-11-01). Done:
+   - End session dialog: GNOME's Log Out / Restart / Power Off confirmation
+     with a 60 s countdown; apps are asked to close first and any still open
+     are listed with "<Action> Anyway" (these used to act immediately).
+     Super+Shift+E and Ctrl+Alt+Del open Log Out; the power button's
+     "interactive" action opens Power Off
+   - Alt+Tab app switcher (most recent first, switches on Alt release),
+     Alt+Shift+Tab back, Super+` cycles an app's windows
+   - Updates: rpm-ostreed-automatic already stages images and flatpak's timer
+     updates apps; the shell notifies once per staged version ("Update
+     Ready", Restart…), the power menu says "Restart & Update…", and the
+     dialog says the update will be installed. GNOME Software (with its
+     rpm-ostree plugin) is the store; its own downloads/notifications are off
+   - No notification banners over fullscreen windows (still listed)
+   - Screenshot UI like GNOME's on Print (Selection / Screen / Window,
+     screenshot or screencast, pointer; S/C/W/V/P keys), Shift+Print screen,
+     Alt+Print window, Ctrl+Alt+Shift+R screencast. Recording with
+     **gpu-screen-recorder** in a transient user unit, red stop/elapsed pill
+     in the bar, "Screenshot captured" / "Screencast recorded" notifications
+   - Screen sharing: our GTK picker (`cobalt-share-picker`) as
+     xdg-desktop-portal-hyprland's custom picker, orange indicator in the
+     bar. **Decision:** GNOME's ScreenCast portal can't be used: it captures
+     through Mutter's private D-Bus API
+   - Lock screen (hyprlock): clock at the top, avatar and name above the
+     password, what's playing (click to play/pause), Restart / Power Off that
+     only go ahead if every app closes
+   - gnome-keyring (unlocked by GDM's PAM, gcr's prompter) checked; SSH agent
+     is gcr-ssh-agent (`SSH_AUTH_SOCK`)
+   - **Mission Center** with Ctrl+Shift+Esc, installed from
+     `/usr/share/cobalt/flatpaks.list` by `cobalt-flatpaks.service`
+
+   Left:
+   - GNOME-style password prompts: our own polkit agent and NetworkManager
+     secret agent (no GTK4 agent is packaged; hyprpolkitagent is Qt)
+   - Date menu: calendar events (Evolution Data Server), weather, world clocks
+7. **Hyprland personalization:** a Windows & Tiling page (layout, gaps,
+   borders, rounding, blur, opacity, animations), a window rules editor
+   (per-app float, workspace, opacity, size), Auto accent color.
+8. Welcome (first-boot checklist script).
+9. Switch the main PC with `bootc switch` (rollback to Bazzite available).
 
 ## Extras
 

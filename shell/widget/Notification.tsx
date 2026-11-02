@@ -1,5 +1,6 @@
 import AstalNotifd from "gi://AstalNotifd"
 import GLib from "gi://GLib"
+import Gdk from "gi://Gdk?version=4.0"
 import Gtk from "gi://Gtk?version=4.0"
 import Pango from "gi://Pango"
 
@@ -28,6 +29,10 @@ export default function Notification({
   onClose?: () => void
 }) {
   const urgent = n.urgency === AstalNotifd.Urgency.CRITICAL
+  // The "default" action is clicking the notification itself, like GNOME;
+  // the others are buttons
+  const hasDefault = n.actions.some((a) => a.id === "default")
+  const buttons = n.actions.filter((a) => a.id !== "default")
 
   return (
     <box
@@ -47,7 +52,20 @@ export default function Notification({
           <image iconName="window-close-symbolic" />
         </button>
       </box>
-      <box class="content" spacing={10}>
+      <box
+        class="content"
+        spacing={10}
+        cursor={hasDefault ? Gdk.Cursor.new_from_name("pointer", null) : null}
+        $={(self) => {
+          if (!hasDefault) return
+          const click = new Gtk.GestureClick()
+          click.connect("released", () => {
+            n.invoke("default")
+            n.dismiss()
+          })
+          self.add_controller(click)
+        }}
+      >
         {n.image && GLib.file_test(n.image, GLib.FileTest.EXISTS) && (
           <image class="picture" file={n.image} pixelSize={48} valign={Gtk.Align.START} />
         )}
@@ -73,9 +91,9 @@ export default function Notification({
           )}
         </box>
       </box>
-      {n.actions.length > 0 && (
+      {buttons.length > 0 && (
         <box class="actions" spacing={6} homogeneous>
-          {n.actions.map(({ label, id }) => (
+          {buttons.map(({ label, id }) => (
             <button onClicked={() => n.invoke(id)}>
               <label label={label} />
             </button>

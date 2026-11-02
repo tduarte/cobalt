@@ -815,3 +815,254 @@ window.shortcuts-window {
     margin-top: 6px;
   }
 }
+
+// ---- End session dialog (Log Out / Restart / Power Off) ----
+
+window.end-session-window {
+  background: transparent;
+}
+
+.end-session-backdrop {
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+.end-session {
+  background-color: $menu-bg;
+  color: $fg;
+  border-radius: 24px;
+  min-width: 420px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+
+  .end-session-content {
+    padding: 28px 28px 20px;
+  }
+
+  .end-session-title {
+    font-size: 15pt;
+    font-weight: bold;
+  }
+
+  .end-session-body {
+    color: $fg;
+  }
+
+  .end-session-apps {
+    margin-top: 6px;
+  }
+
+  .end-session-app {
+    padding: 8px 12px;
+    border-radius: 12px;
+    background-color: $card-bg;
+
+    .window-title {
+      color: $fg-dim;
+      font-size: 9.5pt;
+    }
+  }
+
+  .end-session-buttons {
+    padding: 0 20px 20px;
+
+    button {
+      background-image: none;
+      border: none;
+      box-shadow: none;
+      min-height: 40px;
+      border-radius: 999px;
+      background-color: $card-bg;
+      font-weight: bold;
+
+      &:hover {
+        background-color: $hover;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $accent;
+        outline-offset: -2px;
+      }
+
+      &.destructive {
+        background-color: #c01c28;
+
+        &:hover {
+          background-color: color.adjust(#c01c28, $lightness: 6%);
+        }
+      }
+    }
+  }
+}
+
+// ---- App switcher (Alt+Tab) ----
+
+window.switcher-window {
+  background: transparent;
+}
+
+.switcher {
+  // Room for the shadow: the popup's surface is only as big as its content
+  margin: 48px;
+  background-color: rgba(30, 30, 33, 0.94);
+  color: $fg;
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+
+  .switcher-app {
+    background-image: none;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 16px;
+    padding: 12px 12px 2px;
+
+    &:hover {
+      background-color: $hover;
+    }
+
+    &.selected {
+      background-color: $pressed;
+    }
+  }
+
+  .switcher-more {
+    color: $fg-dim;
+  }
+
+  .switcher-name {
+    font-weight: bold;
+    margin-bottom: 2px;
+  }
+}
+
+// ---- Screenshot UI (Print) and screencast indicator ----
+
+window.screenshot-ui-window {
+  background: transparent;
+}
+
+.screenshot-ui {
+  // Room for the shadow (the surface is only as big as its content)
+  margin: 40px 40px 48px;
+  padding: 12px 16px 16px;
+  min-width: 420px;
+  border-radius: 28px;
+  background-color: rgba(30, 30, 33, 0.94);
+  color: $fg;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+
+  button {
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+  }
+
+  .screenshot-close {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    border-radius: 999px;
+    background-color: $card-bg;
+
+    &:hover {
+      background-color: $hover;
+    }
+  }
+
+  .screenshot-mode {
+    min-width: 96px;
+    padding: 12px 8px;
+    border-radius: 16px;
+    background-color: $card-bg;
+
+    &:hover {
+      background-color: $hover;
+    }
+
+    &.selected {
+      background-color: $pressed;
+    }
+  }
+
+  .screenshot-toggle {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 999px;
+
+    &:hover {
+      background-color: $hover;
+    }
+
+    &.checked {
+      background-color: $pressed;
+    }
+  }
+
+  // The round shutter button: a white ring, white inside for screenshots
+  // and red for screencasts, like GNOME
+  .screenshot-capture {
+    min-width: 64px;
+    min-height: 64px;
+    padding: 0;
+    border-radius: 999px;
+    border: 4px solid $fg;
+
+    .inner {
+      margin: 5px;
+      border-radius: 999px;
+      background-color: $fg;
+      min-width: 46px;
+      min-height: 46px;
+    }
+
+    &:hover .inner {
+      background-color: rgba(255, 255, 255, 0.85);
+    }
+
+    &.video .inner {
+      background-color: #e01b24;
+    }
+
+    &.video:hover .inner {
+      background-color: color.adjust(#e01b24, $lightness: 6%);
+    }
+  }
+
+  .screenshot-type {
+    border-radius: 999px;
+    background-color: $card-bg;
+    padding: 3px;
+
+    button {
+      min-width: 40px;
+      min-height: 32px;
+      padding: 0;
+      border-radius: 999px;
+
+      &:hover {
+        background-color: $hover;
+      }
+
+      &.checked {
+        background-color: $pressed;
+      }
+    }
+  }
+}
+
+window.bar button.recording-indicator {
+  background-color: #e01b24;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0 10px;
+  margin: 4px 4px;
+  font-weight: bold;
+  font-feature-settings: "tnum";
+
+  &:hover {
+    background-color: color.adjust(#e01b24, $lightness: 6%);
+  }
+}

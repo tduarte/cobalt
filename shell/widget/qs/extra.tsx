@@ -225,6 +225,25 @@ export function BrightnessSlider() {
 
 // ---- Privacy: orange microphone in the bar while an app records ----
 
+// GNOME's orange screen-sharing indicator: xdg-desktop-portal-hyprland
+// streams through a PipeWire Video/Source node ("xdph-streaming-<n>") while
+// a screen or window is being shared
+export function ScreenShareIndicator() {
+  const wp = AstalWp.get_default()
+  if (!wp) return <box />
+  const sources = createBinding(wp.video, "sources")
+  return (
+    <image
+      class="privacy-indicator"
+      iconName="screen-shared-symbolic"
+      tooltipText="Screen is being shared"
+      visible={sources((s) =>
+        s.some((n) => (n.name ?? "").startsWith("xdph-") || n.description === "xdg-desktop-portal-hyprland"),
+      )}
+    />
+  )
+}
+
 export function MicIndicator() {
   const wp = AstalWp.get_default()
   if (!wp) return <box />

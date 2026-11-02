@@ -8,12 +8,15 @@ import Gtk from "gi://Gtk?version=4.0"
 import Pango from "gi://Pango"
 import { For, With, createBinding, createState } from "ags"
 import { closeMenus, openMenu, registerSubMenus, toggleMenu } from "../lib/menus"
+import { endSession } from "./EndSession"
+import { pending } from "../lib/updates"
 import PanelMenu from "./PanelMenu"
 import BackgroundApps from "./qs/background"
 import { openSettings, power, sh } from "../lib/system"
 import {
   BrightnessSlider,
   MicIndicator,
+  ScreenShareIndicator,
   airplaneSpec,
   caffeineSpec,
   nightLightSpec,
@@ -346,10 +349,14 @@ function PowerMenu({ open }: { open: OpenMenu }) {
     <MenuRevealer id="power" open={open}>
       <MenuPanel icon="system-shutdown-symbolic" title="Power Off">
         <MenuItem icon="weather-clear-night-symbolic" label="Suspend" onClicked={power.suspend} />
-        <MenuItem icon="system-reboot-symbolic" label="Restart…" onClicked={power.restart} />
-        <MenuItem icon="system-shutdown-symbolic" label="Power Off…" onClicked={power.powerOff} />
+        <MenuItem
+          icon="system-reboot-symbolic"
+          label={pending((p) => (p ? "Restart & Update…" : "Restart…"))}
+          onClicked={() => endSession("restart")}
+        />
+        <MenuItem icon="system-shutdown-symbolic" label="Power Off…" onClicked={() => endSession("poweroff")} />
         <Gtk.Separator />
-        <MenuItem icon="system-log-out-symbolic" label="Log Out…" onClicked={power.logOut} />
+        <MenuItem icon="system-log-out-symbolic" label="Log Out…" onClicked={() => endSession("logout")} />
       </MenuPanel>
     </MenuRevealer>
   )
@@ -387,6 +394,7 @@ export function QuickSettingsButton() {
       onClicked={() => toggleMenu("quick-settings")}
     >
       <box spacing={8}>
+        <ScreenShareIndicator />
         <MicIndicator />
         <image iconName={networkIcon} />
         {wp && <image iconName={createBinding(wp.defaultSpeaker, "volumeIcon")} />}

@@ -42,6 +42,8 @@ local fileManager = "nautilus --new-window"
 local overview    = "ags request -i cobalt overview"
 local appGrid     = "ags request -i cobalt overview apps"
 local lock        = "loginctl lock-session"
+-- GNOME's Log Out dialog; quits directly if the shell isn't running
+local logOut      = "ags request -i cobalt session logout || hyprctl dispatch 'hl.dsp.exit()'"
 
 
 -------------------
@@ -56,7 +58,7 @@ hl.on("hyprland.start", function()
     -- (dbus-update-activation-environment isn't in the image.)
     hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE " ..
         "HYPRLAND_INSTANCE_SIGNATURE XCURSOR_THEME XCURSOR_SIZE HYPRCURSOR_SIZE QT_QPA_PLATFORM ELECTRON_OZONE_PLATFORM_HINT " ..
-        "XDG_SESSION_CLASS XDG_SESSION_ID XDG_SESSION_DESKTOP; " ..
+        "XDG_SESSION_CLASS XDG_SESSION_ID XDG_SESSION_DESKTOP SSH_AUTH_SOCK; " ..
         "systemctl --user start cobalt-session.target")
     -- Handy (speech-to-text) in the background; hold Alt+Space to dictate
     hl.exec_cmd("handy --start-hidden")
@@ -311,10 +313,12 @@ bind("show-apps", mainMod .. " + A", hl.dsp.exec_cmd(appGrid), { desc = "System:
 bind("terminal", mainMod .. " + Return", hl.dsp.exec_cmd(terminal), { desc = "Launchers: Terminal" })
 bind("files", mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { desc = "Launchers: Files" })
 bind("settings", mainMod .. " + I", hl.dsp.exec_cmd("cobalt-settings"), { desc = "Launchers: Settings" })
+bind("system-monitor", "CTRL + SHIFT + Escape", hl.dsp.exec_cmd("flatpak run io.missioncenter.MissionCenter"), { desc = "Launchers: System monitor" })
 bind("notifications", mainMod .. " + V", hl.dsp.exec_cmd("ags request -i cobalt toggle date-menu"), { desc = "System: Notifications" })
 bind("shortcuts", mainMod .. " + slash", hl.dsp.exec_cmd("ags request -i cobalt shortcuts"), { desc = "System: Keyboard shortcuts" })
 bind("lock", mainMod .. " + L", hl.dsp.exec_cmd(lock), { desc = "System: Lock screen" })
-bind("log-out", mainMod .. " + SHIFT + E", hl.dsp.exit(), { desc = "System: Log out" })
+bind("log-out", mainMod .. " + SHIFT + E", hl.dsp.exec_cmd(logOut), { desc = "System: Log out" })
+bind("log-out-alt", "CTRL + ALT + Delete", hl.dsp.exec_cmd(logOut), { desc = "System: Log out", name = "Log out (alternative)" })
 bind("switch-input-source", mainMod .. " + space", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"), { desc = "Typing: Switch input source" })
 
 -- Dictation with Handy: hold Alt+Space to record, release to transcribe into
@@ -324,8 +328,11 @@ hl.bind("ALT + space", hl.dsp.exec_cmd("handy --toggle-transcription"), { desc =
 hl.bind("ALT + space", hl.dsp.exec_cmd("handy --toggle-transcription"), { release = true })
 
 -- Screenshots (saved to ~/Pictures/Screenshots and copied)
-bind("screenshot-area", "Print", hl.dsp.exec_cmd("cobalt-screenshot area"), { desc = "Screenshots: Screenshot area" })
-bind("screenshot-screen", "SHIFT + Print", hl.dsp.exec_cmd("cobalt-screenshot screen"), { desc = "Screenshots: Screenshot screen" })
+-- Print opens the shell's screenshot UI (area selection if the shell is down)
+bind("screenshot-ui", "Print", hl.dsp.exec_cmd("ags request -i cobalt screenshot || cobalt-screenshot area"), { desc = "Screenshots: Take a screenshot interactively" })
+bind("screenshot-screen", "SHIFT + Print", hl.dsp.exec_cmd("cobalt-screenshot screen"), { desc = "Screenshots: Take a screenshot" })
+bind("screenshot-window", "ALT + Print", hl.dsp.exec_cmd("cobalt-screenshot active"), { desc = "Screenshots: Take a screenshot of a window" })
+bind("screencast", "CTRL + ALT + SHIFT + R", hl.dsp.exec_cmd("cobalt-screenrecord toggle"), { desc = "Screenshots: Record a screencast" })
 
 bind("close", mainMod .. " + Q", hl.dsp.window.close(), { desc = "Windows: Close window" })
 bind("close-alt", "ALT + F4", hl.dsp.window.close(), { desc = "Windows: Close window", name = "Close window (alternative)" })
@@ -334,11 +341,14 @@ bind("fullscreen", mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = 
 bind("float", mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }), { desc = "Windows: Toggle floating" })
 bind("toggle-split", mainMod .. " + J", hl.dsp.layout("togglesplit"), { desc = "Windows: Toggle split direction" })
 
--- Alt+Tab cycles windows on the current workspace
-bind("switch-windows", "ALT + Tab", function()
-    hl.dispatch(hl.dsp.window.cycle_next())
-    hl.dispatch(hl.dsp.window.bring_to_top())
-end, { desc = "Navigation: Switch windows" })
+-- Alt+Tab: GNOME's app switcher in the shell (switches when Alt is released);
+-- cycles windows directly if the shell isn't running
+local function switcher(cmd)
+    return hl.dsp.exec_cmd("ags request -i cobalt switcher " .. cmd .. " || hyprctl dispatch 'hl.dsp.window.cycle_next()'")
+end
+bind("switch-apps", "ALT + Tab", switcher("next"), { desc = "Navigation: Switch apps" })
+bind("switch-apps-backward", "ALT + SHIFT + Tab", switcher("prev"), { desc = "Navigation: Switch apps", name = "Switch apps backward" })
+bind("switch-app-windows", mainMod .. " + grave", switcher("app-window"), { desc = "Navigation: Switch windows of an app" })
 
 -- Focus and move windows (Super+Up is maximize, as in GNOME)
 local directions = { { "Left", "left" }, { "Right", "right" }, { "Up", "up" }, { "Down", "down" } }
@@ -440,6 +450,15 @@ hl.window_rule({
     match = { class = "^io.github.tduarte.cobalt.Settings$" },
     float = true,
     size = "980 720",
+    center = true,
+})
+
+-- The screen-share picker is a dialog
+hl.window_rule({
+    name  = "share-picker-float",
+    match = { class = "^io.github.tduarte.cobalt.SharePicker$" },
+    float = true,
+    size = "480 560",
     center = true,
 })
 

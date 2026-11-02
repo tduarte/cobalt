@@ -1,0 +1,161 @@
+#!/usr/bin/gjs -m
+// Screen-share picker for xdg-desktop-portal-hyprland (its
+// screencopy:custom_picker_binary, set in /usr/share/cobalt/xdph): a
+// libadwaita dialog like GNOME's "Share Screen" to pick a monitor or a
+// window. xdph passes the choices in XDPH_OUTPUT_SHARING_LIST and
+// XDPH_WINDOW_SHARING_LIST and reads "[SELECTION]<flags>/<choice>" from our
+// stdout; quitting without printing cancels the share.
+
+import Adw from "gi://Adw?version=1"
+import Gio from "gi://Gio"
+import GioUnix from "gi://GioUnix"
+import GLib from "gi://GLib"
+import Gtk from "gi://Gtk?version=4.0"
+
+// "len:name:x:y:w:h;" per output (the length prefix keeps odd names intact)
+function outputs() {
+  const list = GLib.getenv("XDPH_OUTPUT_SHARING_LIST") ?? ""
+  const out = []
+  let i = 0
+  while (i < list.length) {
+    const colon = list.indexOf(":", i)
+    if (colon < 0) break
+    const len = Number(list.slice(i, colon))
+    const name = list.slice(colon + 1, colon + 1 + len)
+    const rest = list.slice(colon + 2 + len, list.indexOf(";", colon + 1 + len))
+    const [x, y, w, h] = rest.split(":").map(Number)
+    out.push({ name, x, y, w, h })
+    i = list.indexOf(";", colon + 1 + len) + 1
+    if (i <= 0) break
+  }
+  return out
+}
+
+// "handle[HC>]class[HT>]title[HE>]id[HA>]" per window
+function windows() {
+  const list = GLib.getenv("XDPH_WINDOW_SHARING_LIST") ?? ""
+  return list
+    .split("[HA>]")
+    .filter(Boolean)
+    .map((entry) => {
+      const [handle, rest1 = ""] = entry.split("[HC>]")
+      const [cls, rest2 = ""] = rest1.split("[HT>]")
+      const [title] = rest2.split("[HE>]")
+      return { handle, cls, title }
+    })
+}
+
+function appInfo(cls) {
+  for (const id of [cls, cls.toLowerCase()]) {
+    const info = GioUnix.DesktopAppInfo.new(`${id}.desktop`)
+    if (info) return info
+  }
+  return null
+}
+
+let selection = null
+
+const app = new Adw.Application({ applicationId: "io.github.tduarte.cobalt.SharePicker", flags: Gio.ApplicationFlags.NON_UNIQUE })
+
+app.connect("activate", () => {
+  const win = new Adw.ApplicationWindow({ application: app, title: "Share Screen", defaultWidth: 480, defaultHeight: 560 })
+
+  const stack = new Adw.ViewStack()
+  const share = new Gtk.Button({ label: "_Share", useUnderline: true, sensitive: false })
+  share.add_css_class("suggested-action")
+  const cancel = new Gtk.Button({ label: "_Cancel", useUnderline: true })
+
+  const restore = new Adw.SwitchRow({
+    title: "Remember This Selection",
+    subtitle: "The app can share the same screen or window again without asking",
+  })
+
+  // One radio-style list per tab; picking a row enables Share
+  let group = null
+  const pick = (choice) => {
+    selection = choice
+    share.sensitive = true
+  }
+  const row = (title, subtitle, prefix, choice) => {
+    const r = new Adw.ActionRow({ title: GLib.markup_escape_text(title, -1), subtitle: GLib.markup_escape_text(subtitle, -1), activatable: true })
+    const check = new Gtk.CheckButton({ valign: Gtk.Align.CENTER })
+    if (group) check.set_group(group)
+    else group = check
+    check.connect("toggled", () => check.active && pick(choice))
+    // add_prefix() prepends: the icon goes first so the radio ends up leftmost
+    if (prefix) r.add_prefix(prefix)
+    r.add_prefix(check)
+    r.activatableWidget = check
+    return r
+  }
+
+  const page = (rows, empty) => {
+    const prefs = new Adw.PreferencesPage()
+    const g = new Adw.PreferencesGroup()
+    if (rows.length === 0) g.add(new Adw.ActionRow({ title: empty }))
+    rows.forEach((r) => g.add(r))
+    prefs.add(g)
+    return prefs
+  }
+
+  const screenRows = outputs().map((o) =>
+    row(o.name, `${o.w} × ${o.h}`, new Gtk.Image({ iconName: "video-single-display-symbolic", pixelSize: 24 }), `screen:${o.name}`),
+  )
+  const windowRows = windows().map((w) => {
+    const info = appInfo(w.cls)
+    const icon = new Gtk.Image({ pixelSize: 32 })
+    if (info?.get_icon()) icon.gicon = info.get_icon()
+    else icon.iconName = "application-x-executable"
+    return row(w.title || w.cls, info?.get_name() ?? w.cls, icon, `window:${w.handle}`)
+  })
+  stack.add_titled_with_icon(page(screenRows, "No screens"), "screens", "Entire Screen", "video-single-display-symbolic")
+  stack.add_titled_with_icon(page(windowRows, "No windows"), "windows", "Window", "focus-windows-symbolic")
+
+  const header = new Adw.HeaderBar({ showStartTitleButtons: false, showEndTitleButtons: false })
+  header.titleWidget = new Adw.WindowTitle({ title: "Share Screen" })
+  header.pack_start(cancel)
+  header.pack_end(share)
+  const tabs = new Adw.ViewSwitcher({ stack, policy: Adw.ViewSwitcherPolicy.WIDE, marginTop: 6, marginStart: 12, marginEnd: 12 })
+
+  const options = new Adw.PreferencesGroup({ marginStart: 12, marginEnd: 12, marginBottom: 12 })
+  options.add(restore)
+
+  const view = new Adw.ToolbarView()
+  view.add_top_bar(header)
+  view.add_top_bar(tabs)
+  const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL })
+  stack.vexpand = true
+  box.append(stack)
+  box.append(options)
+  view.content = box
+  win.content = view
+
+  cancel.connect("clicked", () => {
+    selection = null
+    win.close()
+  })
+  share.connect("clicked", () => {
+    if (selection) print(`[SELECTION]${restore.active ? "r" : ""}/${selection}`)
+    selection = null
+    win.close()
+  })
+  const keys = new Gtk.EventControllerKey()
+  keys.connect("key-pressed", (_, keyval) => {
+    if (keyval !== 0xff1b) return false // Escape
+    win.close()
+    return true
+  })
+  win.add_controller(keys)
+
+  // Preselect the only screen, like GNOME with one monitor; Enter shares
+  if (screenRows.length === 1) screenRows[0].activate()
+  win.defaultWidget = share
+  // QA: COBALT_PICKER_PAGE=windows opens the Window tab
+  if (GLib.getenv("COBALT_PICKER_PAGE") === "windows") stack.visibleChildName = "windows"
+  win.present()
+})
+
+Adw.init()
+const style = Adw.StyleManager.get_default()
+style.colorScheme = Adw.ColorScheme.PREFER_DARK
+app.run([])

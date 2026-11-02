@@ -3,6 +3,7 @@ import { Astal, Gdk } from "ags/gtk4"
 import { onCleanup } from "ags"
 import { DateMenuButton } from "./DateMenu"
 import { QuickSettingsButton } from "./QuickSettings"
+import { RecordingIndicator } from "./ScreenshotUI"
 import Workspaces from "./Workspaces"
 
 // GNOME-style top bar: Activities/workspaces left, clock center, quick
@@ -36,6 +37,7 @@ export default function Bar({ gdkmonitor }: { gdkmonitor: Gdk.Monitor }) {
           <DateMenuButton />
         </box>
         <box $type="end" spacing={4}>
+          <RecordingIndicator />
           <QuickSettingsButton />
         </box>
       </centerbox>

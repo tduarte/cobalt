@@ -336,6 +336,36 @@ Hard-won facts:
   covers the work area *below* the bar so outside clicks close the menu but
   bar buttons still work.
 
+- **Overlay popups that take the keyboard** (`keymode EXCLUSIVE`): when one
+  unmaps, Hyprland gives focus back to the window that had it, so focus
+  another window only after the popup's `unmap` (Alt+Tab switcher).
+- Key handlers on popups with buttons need
+  `propagationPhase: Gtk.PropagationPhase.CAPTURE`, or Enter activates the
+  focused button (Close) before the handler sees it.
+- A layer window without anchors is exactly as big as its content, so a CSS
+  `box-shadow` is clipped into a square; give the card a `margin`.
+- libnotify's `notify-send --icon` sends an image, not the app icon; use
+  `--app-icon` for the header icon and `--hint=string:image-path:<file>` for
+  a picture. A notification with `--action` blocks until it's answered, so
+  never leave one inside a unit whose state means something (the screencast
+  unit hands it to its own transient unit).
+- The "default" action is clicking the notification (GNOME); our cards don't
+  show it as a button.
+- QA hooks: `ags request -i cobalt session logout|restart|poweroff`,
+  `switcher next|prev|app-window`, `screenshot`, `updates`.
+  `wtype -M alt` only changes modifiers (no key release), so Alt+Tab's
+  release path can't be tested over SSH; the quick-tap path can.
+- **Screen sharing:** xdg-desktop-portal-hyprland only reads
+  `$XDG_CONFIG_HOME/hypr/xdph.conf`, so its service gets
+  `XDG_CONFIG_HOME=/usr/share/cobalt/xdph` (drop-in) for our picker. While a
+  share runs, PipeWire has a Video/Source node `xdph-streaming-<n>`
+  (AstalWp `video.sources`). Test the whole chain with a ScreenCast portal
+  client (CreateSession → SelectSources → Start).
+- `grim` can't capture the lock screen; hyprlock unlocks on `SIGUSR1`
+  (`pkill -USR1 -x hyprlock`).
+- To try scripts in the VM without a rebuild: `sudo bootc usr-overlay`
+  (a writable /usr until reboot), then copy them over.
+
 ## Visual QA (do this before handing UI to the user)
 
 - Check the **desktop with app windows open** after any change to layer
@@ -361,7 +391,9 @@ Hard-won facts:
   whole remote command in one quoted string. An earlier unquoted version let a
   `| sudo tee` run **on the host**. Never let VM commands reach the host shell.
 - `pgrep -f`/`pkill -f '<pattern>'` match your own shell's command line if it
-  contains the pattern (`pkill -f` over SSH killed its own session). Use
+  contains the pattern (`pkill -f` over SSH killed its own session, even with
+  the `[c]obalt` bracket trick). Kill by a recorded `$!`, or loop over
+  `pgrep -x gjs` and check `/proc/<pid>/cmdline`. Use
   `pgrep -x`/`pkill -x` with exact process names (`gjs`, `cobalt-shell`).
 - Never `rm -f $VAR/*`; use `"${VAR:?}"/*` so an empty variable can't expand
   to `/`.

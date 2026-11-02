@@ -55,12 +55,11 @@ export const userUnit = {
   stop: (unit: string) => execAsync(["systemctl", "--user", "stop", unit]),
 }
 
+// Restart, Power Off and Log Out go through the end session dialog
+// (widget/EndSession.tsx)
 export const power = {
   lock: () => sh("loginctl lock-session"),
   suspend: () => sh("systemctl suspend"),
-  restart: () => sh("systemctl reboot"),
-  powerOff: () => sh("systemctl poweroff"),
-  logOut: () => hyprDispatch("hl.dsp.exit()"),
 }
 
 // GNOME's interface settings: the Settings app (M5) writes the same keys, and

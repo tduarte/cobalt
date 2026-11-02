@@ -41,3 +41,10 @@ sleep-inactive-ac-type='nothing'
 # Hyprland workspaces are dynamic too, so match it
 [org.gnome.mutter]
 dynamic-workspaces=true
+
+# rpm-ostreed and flatpak's timer already download updates; GNOME Software is
+# the store and the manual updates page, and the shell says when an OS update
+# is ready
+[org.gnome.software]
+download-updates=false
+download-updates-notify=false
