@@ -49,16 +49,14 @@ local lock        = "loginctl lock-session"
 -------------------
 
 hl.on("hyprland.start", function()
-    -- Let systemd user services and D-Bus activated apps (portals, polkit agent)
-    -- see the Wayland session
-    hl.exec_cmd("dbus-update-activation-environment --systemd --all")
-    hl.exec_cmd("systemctl --user start hyprpolkitagent")
-    hl.exec_cmd("hypridle --config /usr/share/cobalt/hypr/hypridle.conf")
-    hl.exec_cmd("wl-paste --watch cliphist store")
-    -- Wallpaper (hyprpaper, following GNOME's background settings)
-    hl.exec_cmd("cobalt-wallpaper")
-    -- Top bar, menus and notifications (AGS, shell/ in the repo)
-    hl.exec_cmd("cobalt-shell")
+    -- Give systemd user services and D-Bus activated apps (dbus-broker starts
+    -- them through systemd) the session environment, then start the session
+    -- services: shell, idle, wallpaper, polkit agent, clipboard history
+    -- (cobalt-session.target). systemd restarts each one if it crashes.
+    -- (dbus-update-activation-environment isn't in the image.)
+    hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE " ..
+        "HYPRLAND_INSTANCE_SIGNATURE XCURSOR_THEME XCURSOR_SIZE HYPRCURSOR_SIZE QT_QPA_PLATFORM ELECTRON_OZONE_PLATFORM_HINT; " ..
+        "systemctl --user start cobalt-session.target")
     -- Handy (speech-to-text) in the background; hold Alt+Space to dictate
     hl.exec_cmd("handy --start-hidden")
     if in_vm then
@@ -285,12 +283,13 @@ hl.bind(mainMod .. " + mouse_down",        hl.dsp.focus({ workspace = "e+1" }), 
 hl.bind(mainMod .. " + mouse_up",          hl.dsp.focus({ workspace = "e-1" }),       { desc = "Workspaces: Scroll through workspaces" })
 
 -- Media and brightness keys
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+-- swayosd-client changes the value and shows SwayOSD's on-screen display
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("swayosd-client --output-volume raise"),      { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("swayosd-client --output-volume lower"),      { locked = true, repeating = true })
+hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("swayosd-client --output-volume mute-toggle"), { locked = true })
+hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("swayosd-client --input-volume mute-toggle"),  { locked = true })
+hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("swayosd-client --brightness raise"),         { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("swayosd-client --brightness lower"),         { locked = true, repeating = true })
 hl.bind("XF86AudioNext",        hl.dsp.exec_cmd("playerctl next"),       { locked = true })
 hl.bind("XF86AudioPause",       hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay",        hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })

@@ -1,0 +1,9 @@
+# Everything that runs in the background of a cobalt session. hyprland.lua
+# starts it after importing the session environment into systemd; it stops
+# with Hyprland's own hyprland-session.target. Each service restarts on its
+# own when it crashes.
+[Unit]
+Description=cobalt session services
+PartOf=hyprland-session.target
+After=hyprland-session.target
+Wants=cobalt-shell.service hypridle.service hyprpaper.service cobalt-wallpaper.service hyprpolkitagent.service cobalt-clipboard.service cobalt-osd.service

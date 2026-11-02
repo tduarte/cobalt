@@ -4,7 +4,7 @@ import AstalApps from "gi://AstalApps"
 import Graphene from "gi://Graphene"
 import { With, createComputed, createState } from "ags"
 import { closeMenus } from "../../lib/menus"
-import { hyprDispatch } from "../../lib/system"
+import { hyprDispatch, launchApp } from "../../lib/system"
 import { Dash, DashApp, dashItems } from "./dash"
 import { AppTile, PagedGrid, TILE, TILE_GAP } from "./grid"
 import { Folder, Win, folders, gridItems, loadWindows, onFavoritesChanged, searchApps } from "./model"
@@ -77,7 +77,7 @@ export function debugOverview(): string {
 
 function launch(a: AstalApps.Application) {
   hideOverview()
-  a.launch()
+  launchApp(a)
 }
 
 function activateDash(item: DashApp) {

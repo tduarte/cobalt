@@ -70,12 +70,12 @@ libraries with the shell.
 
 | App | What it does |
 |---|---|
-| Settings | **Full GNOME Settings parity** (decision): every GNOME Settings page, as close to a real DE as possible, including everything quick settings does (Wi-Fi, Network/VPN, Bluetooth, Sound, Power) with the full detail pages, plus Displays, Appearance/Background, Notifications, Search, Multitasking, Apps, Privacy, Online Accounts, Sharing, Mouse & Touchpad, Keyboard, Color, Printers, Accessibility, System (region, date & time, users, about). Layout and pages copied from the user's GNOME Settings screenshots. `AdwNavigationSplitView` + preference pages. Writes the same GSettings keys GNOME uses (`org.gnome.desktop.*`), so libadwaita apps follow it through the settings portal; Hyprland-specific settings (monitors, input, keybindings) go to a generated file the Lua config loads. Opened from the quick settings gear. |
+| Settings | **Full GNOME Settings parity** (decision): every GNOME Settings page, as close to a real DE as possible, including everything quick settings does (Wi-Fi, Network/VPN, Bluetooth, Sound, Power) with the full detail pages, plus Displays, Appearance/Background, Notifications, Search, Multitasking, Apps, Privacy, Online Accounts, Sharing, Mouse & Touchpad, Keyboard, Color, Printers, Accessibility, System (region, date & time, users, about). Layout and pages copied from the user's GNOME Settings screenshots (kept locally in `~/.cache/cobalt-refs/settings/`, not in the repo: they show personal network names). **Dark only** (decision): Appearance has no light style for now; it offers accent colors and backgrounds. Keyboard shortcuts are **editable** (saved to a generated file the Hyprland config loads). Pages without a backend outside GNOME Shell (Remote Desktop, Online Accounts, Printers, Sharing, Color Management) are **hidden** until we build replacements; Wellbeing is out of scope. `AdwNavigationSplitView` + preference pages. Writes the same GSettings keys GNOME uses (`org.gnome.desktop.*`), so libadwaita apps follow it through the settings portal; Hyprland-specific settings (monitors, input, keybindings) go to a generated file the Lua config loads. Opened from the quick settings gear. Opens **floating** by default (Hyprland window rule on its app id), like a GNOME window. |
 | Date menu | Media player cards (MPRIS) and notifications on the left with Clear; date heading and a custom GNOME-style calendar on the right. Later: events (Evolution Data Server), world clocks, weather. |
 | Launcher (was "Activities overview") | Super / Activities dots / Super+A open a full-screen launcher: search on top (one row of app results), GNOME's paged app grid with folders (GNOME's `app-folders`), and the dash with favorites (GNOME's `favorite-apps`) and running dots. **Decision (M4.5):** no workspace cards, strip or window thumbnails; window management stays with Hyprland (keybindings, Alt+Tab, workspace dots in the bar). **Hot Edge** (bottom edge) opens it too. |
 | Quick settings | GNOME 48's menu: screenshot / lock / power (inline power menu); volume + Sound Output, microphone + Sound Input, brightness (backlight or DDC/CI); toggles Wi-Fi (networks + password), Wired, VPN, Bluetooth (devices), Power Mode, Night Light (hyprsunset), Do Not Disturb, Caffeine, Airplane Mode. Toggles with an arrow open their menu inline below the row, one at a time. Orange mic indicator in the bar while recording. Not yet: Settings gear (M5), Background Apps (M4), Dark Style (removed by choice). |
 | Shortcut cheat sheet | Overlay listing all keybindings, generated from the Hyprland config. |
-| OSD | GNOME-style on-screen indicator for volume, mic mute and brightness keys (part of the shell, M4.6). |
+| OSD | **SwayOSD** (Terra) for the volume, mic mute and brightness keys (M4.6); close enough to GNOME's, nothing for us to maintain. |
 | Welcome | **Decision:** a first-boot checklist script, not a full app: Flatpak picks, Secure Boot key enrollment, dotfiles, basics of tiling (points at the shortcut cheat sheet). |
 
 ## Apps from elsewhere
@@ -164,9 +164,23 @@ gaps, blur and translucency on shell surfaces, livelier animations.
    the bar gets no tray icons, like stock GNOME), Activities overview (with
    Hot Edge), shortcut cheat sheet.
    - **4.5:** launcher (app grid, search, dash), wallpapers via hyprpaper.
-   - **4.6:** session daemons as systemd user services; volume/brightness OSD.
-5. Settings app (full GNOME Settings parity, built page by page from
-   screenshots of GNOME Settings).
+   - **4.6:** session daemons as systemd user services; volume/brightness OSD
+     (SwayOSD).
+5. Settings app (full GNOME Settings parity), shipped in batches in GNOME's
+   sidebar order, each tested before the next:
+   - Wi-Fi (saved/hidden networks, hotspot, QR share), Network (wired, VPN
+     with NetworkManager's VPN editors, proxy), Bluetooth
+   - Displays (resolution, refresh/VRR, HDR, scale, orientation, Night Light
+     schedule), Sound (devices, profiles, balance, volume levels), Power
+     (devices' batteries, power mode, power button, dim/blank/suspend via
+     hypridle), Multitasking (Hot Edge, workspaces), Appearance (accent,
+     backgrounds)
+   - Apps (default apps, removable media), Notifications (DND, per app),
+     Search (launcher providers)
+   - Mouse & Touchpad, Keyboard (layouts, compose/alternate keys, shortcut
+     editor), Accessibility, Privacy & Security
+   - System: Region & Language, Date & Time (incl. top bar clock options),
+     Users, Secure Shell, About (cobalt logo, device name, hardware)
 6. Welcome (first-boot checklist script).
 7. Switch the main PC with `bootc switch` (rollback to Bazzite available).
 
@@ -181,6 +195,9 @@ gaps, blur and translucency on shell surfaces, livelier animations.
   session.
 
 ## Backlog (polish)
+
+- **Auto accent color** (after M5): an "Auto" swatch in Appearance that picks
+  the accent from the current wallpaper and updates when it changes.
 
 - Background Apps hover states (compare GNOME 48): the "N Background Apps ›"
   row should highlight as a full-width pill; an app row should highlight as one

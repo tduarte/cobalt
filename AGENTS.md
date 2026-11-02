@@ -87,10 +87,30 @@ Add new COPRs to the loops in both `repos.sh` (enable) and `finalize.sh`
 - Prefer stock Hypr tools over shell code for things that must survive a shell
   crash (lock: hyprlock, idle: hypridle, wallpaper: hyprpaper). The wallpaper
   was once a shell window and ended up above all apps.
-- Wallpaper: `cobalt-wallpaper` starts hyprpaper (`hyprpaper.conf` has no
-  wallpaper) and sets it over IPC from GNOME's background keys
-  (`hyprctl hyprpaper wallpaper ', <path>, cover'`), re-applying on
-  `gsettings monitor`. Check with `hyprctl hyprpaper listactive`.
+- **Session services (systemd user units in `system_files/usr/lib/systemd/user/`).**
+  `hyprland.lua` imports the environment and starts `cobalt-session.target`,
+  which wants `cobalt-shell`, `hypridle`, `hyprpaper` + `cobalt-wallpaper`,
+  `hyprpolkitagent` and `cobalt-clipboard`; each restarts on failure. Packaged
+  units (hypridle, hyprpaper, hyprsunset) get our flags through `*.service.d/`
+  drop-ins. Hyprland itself activates `hyprland-session.target`, and
+  everything stops with it. Inspect with
+  `systemctl --user status cobalt-session.target` /
+  `journalctl --user -u cobalt-shell`.
+- The shell launches apps in their own scopes (`systemd-run --user --scope`,
+  `launchApp` in `lib/system.ts`), so a shell restart never kills apps. Keep
+  the shell service's default `KillMode`: `/usr/bin/cobalt-shell` is a
+  wrapper that runs `gjs` as a child, and `KillMode=process` left that child
+  alive after a crash, so the restarted copy found the old instance and quit. Toggles with state (Night Light =
+  `hyprsunset.service`, Caffeine = `cobalt-caffeine.service`) live in systemd,
+  not in the shell, so they survive restarts.
+- Wallpaper: `hyprpaper.service` runs `cobalt-wallpaper --write-config`
+  first (config in `$XDG_RUNTIME_DIR/cobalt/hyprpaper.conf` with the current
+  picture), and `cobalt-wallpaper.service` re-applies over IPC
+  (`hyprctl hyprpaper wallpaper ', <path>, cover'`) when GNOME's background
+  keys change. Check with `hyprctl hyprpaper listactive`.
+- OSD: SwayOSD (Terra). `cobalt-osd.service` runs `swayosd-server`; the
+  media key binds call `swayosd-client` (it changes the value and shows the
+  OSD). The caps-lock libinput backend isn't used.
 
 ## Dev VM (GNOME Boxes)
 
@@ -107,7 +127,7 @@ registry). Boxes is a Flatpak: run libvirt tools as
 | `just registry` | Starts the `cobalt-registry` podman container (127.0.0.1:5000) |
 | `just vm-push` | `just build cobalt dev` + push to the local registry |
 | `just vm-update` | `bootc switch`/`upgrade` in the VM, then power off and cold-start |
-| `just shell-dev` | Copies `shell/` into the VM and runs it with `ags run` inside Hyprland (no image rebuild); log at `/tmp/cobalt-shell.log` in the VM |
+| `just shell-dev` | Stops `cobalt-shell.service`, copies `shell/` into the VM and runs it with `ags run` inside Hyprland (no image rebuild); log at `/tmp/cobalt-shell.log` in the VM. A VM restart brings the service back |
 | `just vm-screenshot <path>` | `grim` screenshot of the VM session to a local file |
 
 Hard-won facts:

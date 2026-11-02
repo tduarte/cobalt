@@ -544,7 +544,7 @@ shell-dev:
     set -euo pipefail
     tar -C shell --exclude=node_modules --exclude=@girs -cf - . \
         | just vm-ssh 'rm -rf ~/.cache/cobalt-shell-dev && mkdir -p ~/.cache/cobalt-shell-dev && tar -C ~/.cache/cobalt-shell-dev -xf -'
-    just vm-ssh 'export XDG_RUNTIME_DIR=/run/user/$(id -u) HYPRLAND_INSTANCE_SIGNATURE=$(ls -t /run/user/$(id -u)/hypr | head -1); ags quit -i cobalt >/dev/null 2>&1 || true; pkill -x cobalt-shell || true; sleep 0.5; hyprctl dispatch "hl.dsp.exec_cmd(\"ags run -d $HOME/.cache/cobalt-shell-dev > /tmp/cobalt-shell.log 2>&1\")" >/dev/null'
+    just vm-ssh 'export XDG_RUNTIME_DIR=/run/user/$(id -u) HYPRLAND_INSTANCE_SIGNATURE=$(ls -t /run/user/$(id -u)/hypr | head -1); systemctl --user stop cobalt-shell.service 2>/dev/null || true; ags quit -i cobalt >/dev/null 2>&1 || true; pkill -x cobalt-shell || true; sleep 0.5; hyprctl dispatch "hl.dsp.exec_cmd(\"ags run -d $HOME/.cache/cobalt-shell-dev > /tmp/cobalt-shell.log 2>&1\")" >/dev/null'
 
 # Save a screenshot of the VM's Hyprland session to the given local path
 [group('Dev VM')]

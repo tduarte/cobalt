@@ -1,14 +1,20 @@
 #!/usr/bin/bash
-# Draws the desktop wallpaper with hyprpaper and keeps it in sync with GNOME's
+# Keeps the desktop wallpaper (hyprpaper) in sync with GNOME's
 # org.gnome.desktop.background, so the Settings app (and anything else that
-# writes GNOME's keys) changes it. Started once from hyprland.lua.
+# writes GNOME's keys) changes it. Both run as systemd user services:
+#
+#   cobalt-wallpaper --write-config   hyprpaper.service runs this before it
+#                                     starts, so a restart keeps the picture
+#   cobalt-wallpaper                  cobalt-wallpaper.service: applies changes
+#                                     live over hyprpaper's IPC
 
 set -uo pipefail
 
-hyprpaper --config /usr/share/cobalt/hypr/hyprpaper.conf &
+config="${XDG_RUNTIME_DIR:?}/cobalt/hyprpaper.conf"
 
-apply() {
-    local scheme key uri path fit
+# Sets $path and $fit from GNOME's settings; fails if there's no picture
+current() {
+    local scheme key uri
     scheme="$(gsettings get org.gnome.desktop.interface color-scheme)"
     key=picture-uri
     [[ "$scheme" == "'prefer-dark'" ]] && key=picture-uri-dark
@@ -18,15 +24,35 @@ apply() {
     # file:// URI to a path, decoding %XX escapes
     path="${uri#file://}"
     path="$(printf '%b' "${path//%/\\x}")"
-    [[ -f "$path" ]] || return
+    [[ -f "$path" ]] || return 1
     case "$(gsettings get org.gnome.desktop.background picture-options)" in
         "'scaled'" | "'centered'") fit=contain ;;
         "'stretched'") fit=fill ;;
         "'wallpaper'") fit=tile ;;
         *) fit=cover ;;
     esac
-    hyprctl hyprpaper wallpaper ", $path, $fit" >/dev/null
 }
+
+write_config() {
+    mkdir -p "${config%/*}"
+    {
+        echo "splash = false"
+        echo "ipc = true"
+        if current; then
+            printf 'wallpaper {\n    monitor =\n    path = %s\n    fit_mode = %s\n}\n' "$path" "$fit"
+        fi
+    } > "$config"
+}
+
+apply() {
+    write_config
+    current && hyprctl hyprpaper wallpaper ", $path, $fit" >/dev/null
+}
+
+if [[ "${1:-}" == "--write-config" ]]; then
+    write_config
+    exit 0
+fi
 
 # hyprpaper's IPC socket takes a moment to come up
 for _ in $(seq 50); do
@@ -35,7 +61,7 @@ for _ in $(seq 50); do
 done
 apply
 
-# Re-apply when the wallpaper, its fit or the light/dark style changes
+# Re-apply when the wallpaper, its fit or the color scheme changes
 {
     gsettings monitor org.gnome.desktop.background &
     gsettings monitor org.gnome.desktop.interface color-scheme &

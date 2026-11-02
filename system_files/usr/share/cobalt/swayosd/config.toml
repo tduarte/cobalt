@@ -1,0 +1,7 @@
+# SwayOSD for cobalt (cobalt-osd.service passes this file)
+[server]
+style = "/usr/share/cobalt/swayosd/style.css"
+# Like GNOME without over-amplification
+max_volume = 100
+min_brightness = 5
+duration = 1500

@@ -57,6 +57,9 @@ dnf5 -y install \
     ddcutil \
     playerctl
 
+# On-screen display for the volume/brightness keys (Terra)
+dnf5 -y install SwayOSD
+
 # Adwaita look for GTK3/GTK4 apps and the shell
 dnf5 -y install \
     adw-gtk3-theme \

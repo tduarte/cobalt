@@ -7,7 +7,7 @@ import Gtk from "gi://Gtk?version=4.0"
 import NM from "gi://NM"
 import { For, createBinding, createState } from "ags"
 import { execAsync } from "ags/process"
-import { sh } from "../../lib/system"
+import { sh, userUnit } from "../../lib/system"
 import { MenuItem, MenuPanel, OpenMenu, Toggle, ToggleSpec } from "./parts"
 
 // ---- VPN (NetworkManager VPN and WireGuard connections) ----
@@ -86,64 +86,46 @@ export function vpnSpec(open: OpenMenu): ToggleSpec | null {
   }
 }
 
-// ---- Night Light (hyprsunset) ----
+// ---- Night Light (hyprsunset.service; its drop-in sets the temperature) ----
 
-const NIGHT_LIGHT_KELVIN = 4000
-
-export function nightLightSpec(): ToggleSpec | null {
-  if (!GLib.find_program_in_path("hyprsunset")) return null
-  let proc: Gio.Subprocess | null = null
+// A toggle backed by a systemd user unit: the state lives in systemd, so it
+// survives shell restarts
+function unitToggle(icon: string, label: string, unit: string, start: () => Promise<unknown>): ToggleSpec {
   const [on, setOn] = createState(false)
-
-  const start = () => {
-    proc = Gio.Subprocess.new(["hyprsunset", "-t", `${NIGHT_LIGHT_KELVIN}`], Gio.SubprocessFlags.NONE)
-    setOn(true)
-    proc.wait_async(null, () => {
-      proc = null
-      setOn(false)
-    })
-  }
-
+  const refresh = () => userUnit.isActive(unit).then(setOn)
+  refresh()
   return {
     toggle: () => (
       <Toggle
-        icon="night-light-symbolic"
-        label="Night Light"
+        icon={icon}
+        label={label}
         active={on}
-        onToggled={() => (proc ? proc.force_exit() : start())}
+        onToggled={() => {
+          const action = on.get() ? userUnit.stop(unit) : start()
+          action.catch(console.error).finally(refresh)
+        }}
       />
     ),
   }
 }
 
+export function nightLightSpec(): ToggleSpec | null {
+  if (!GLib.find_program_in_path("hyprsunset")) return null
+  return unitToggle("night-light-symbolic", "Night Light", "hyprsunset.service", () =>
+    userUnit.start("hyprsunset.service"),
+  )
+}
+
 // ---- Caffeine: keep the screen awake (hypridle honors systemd inhibitors) ----
 
 export function caffeineSpec(): ToggleSpec {
-  let proc: Gio.Subprocess | null = null
-  const [on, setOn] = createState(false)
-
-  const start = () => {
-    proc = Gio.Subprocess.new(
-      ["systemd-inhibit", "--what=idle", "--who=Cobalt", "--why=Caffeine", "sleep", "infinity"],
-      Gio.SubprocessFlags.NONE,
-    )
-    setOn(true)
-    proc.wait_async(null, () => {
-      proc = null
-      setOn(false)
-    })
-  }
-
-  return {
-    toggle: () => (
-      <Toggle
-        icon="cobalt-caffeine-symbolic"
-        label="Caffeine"
-        active={on}
-        onToggled={() => (proc ? proc.force_exit() : start())}
-      />
-    ),
-  }
+  const unit = "cobalt-caffeine.service"
+  return unitToggle("cobalt-caffeine-symbolic", "Caffeine", unit, () =>
+    execAsync([
+      "systemd-run", "--user", `--unit=${unit}`, "--collect", "--quiet",
+      "systemd-inhibit", "--what=idle", "--who=Cobalt", "--why=Caffeine", "sleep", "infinity",
+    ]),
+  )
 }
 
 // ---- Airplane Mode: all radios off (Wi-Fi/WWAN through NetworkManager, Bluetooth) ----
