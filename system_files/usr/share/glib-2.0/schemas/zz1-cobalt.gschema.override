@@ -13,3 +13,14 @@ monospace-font-name='Adwaita Mono 11'
 
 [org.gnome.desktop.wm.preferences]
 button-layout='appmenu:close'
+
+# Default wallpaper (shell-drawn; the overview reuses it)
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/backgrounds/cobalt/boliviainteligente-37WxvlfW3to.jpg'
+picture-uri-dark='file:///usr/share/backgrounds/cobalt/boliviainteligente-37WxvlfW3to.jpg'
+picture-options='zoom'
+
+# Default dash favorites for new users (GNOME's own key, so an existing GNOME
+# setup carries over)
+[org.gnome.shell]
+favorite-apps=['org.gnome.Nautilus.desktop', 'org.mozilla.firefox.desktop', 'steam.desktop', 'com.mitchellh.ghostty.desktop', 'org.gnome.TextEditor.desktop']

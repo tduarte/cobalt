@@ -55,6 +55,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("hypridle --config /usr/share/cobalt/hypr/hypridle.conf")
     hl.exec_cmd("wl-paste --watch cliphist store")
+    -- Wallpaper (hyprpaper, following GNOME's background settings)
+    hl.exec_cmd("cobalt-wallpaper")
     -- Top bar, menus and notifications (AGS, shell/ in the repo)
     hl.exec_cmd("cobalt-shell")
     -- Handy (speech-to-text) in the background; hold Alt+Space to dictate

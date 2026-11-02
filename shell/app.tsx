@@ -9,7 +9,7 @@ import { MenuBackdrop } from "./widget/PanelMenu"
 import QuickSettings from "./widget/QuickSettings"
 import Shortcuts, { toggleShortcuts } from "./widget/Shortcuts"
 import NotificationBanners from "./widget/NotificationBanners"
-import Overview, { searchOverview, toggleOverview } from "./widget/Overview"
+import Overview, { debugOverview, openFolderOverview, searchOverview, toggleOverview } from "./widget/overview"
 
 app.start({
   instanceName: "cobalt",
@@ -23,10 +23,12 @@ app.start({
       toggleShortcuts()
       response("ok")
     } else if (command === "overview") {
-      // `overview` toggles the window overview, `overview apps` the app grid,
-      // `overview search <text>` opens it with a search typed in (for QA)
+      // `overview` toggles the launcher (`overview apps` is the same, for the
+      // Super+A bind); `search <text>`, `folder <id>`, `debug` are for QA
       if (name === "search") searchOverview(argv.slice(2).join(" "))
-      else toggleOverview(name === "apps" ? "apps" : "windows")
+      else if (name === "debug") return response(debugOverview())
+      else if (name === "folder") openFolderOverview(argv[2] ?? "")
+      else toggleOverview()
       response("ok")
     } else if (command === "css") {
       // Dev: try CSS live, e.g. ags request -i cobalt css "button { color: red; }"

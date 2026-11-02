@@ -47,6 +47,11 @@ Universal Blue key enrolled.
   - Validate with `Hyprland --verify-config -c <file>` (as a normal user).
 - hypridle/hyprlock still use the classic hyprlang format; their configs are
   in `/usr/share/cobalt/hypr/` too and are passed by path.
+- **Decision (M4.6):** session daemons (hypridle, hyprpaper/`cobalt-wallpaper`,
+  hyprpolkitagent, cliphist, the shell) run as **systemd user services** bound
+  to the graphical session, so a crash restarts them instead of leaving them
+  dead until logout. Evaluate `uwsm` (same COPR) to manage the session vs.
+  our own units started from `hyprland.lua`.
 
 ## Shell: AGS v3 + Astal (TypeScript, GTK4)
 
@@ -65,12 +70,13 @@ libraries with the shell.
 
 | App | What it does |
 |---|---|
-| Settings | GNOME Settings-like app (`AdwNavigationSplitView` + preference pages). Writes the same GSettings keys GNOME uses (`org.gnome.desktop.interface`: color scheme, accent color, fonts), so every libadwaita app follows it through the settings portal. |
+| Settings | **Full GNOME Settings parity** (decision): every GNOME Settings page, as close to a real DE as possible, including everything quick settings does (Wi-Fi, Network/VPN, Bluetooth, Sound, Power) with the full detail pages, plus Displays, Appearance/Background, Notifications, Search, Multitasking, Apps, Privacy, Online Accounts, Sharing, Mouse & Touchpad, Keyboard, Color, Printers, Accessibility, System (region, date & time, users, about). Layout and pages copied from the user's GNOME Settings screenshots. `AdwNavigationSplitView` + preference pages. Writes the same GSettings keys GNOME uses (`org.gnome.desktop.*`), so libadwaita apps follow it through the settings portal; Hyprland-specific settings (monitors, input, keybindings) go to a generated file the Lua config loads. Opened from the quick settings gear. |
 | Date menu | Media player cards (MPRIS) and notifications on the left with Clear; date heading and a custom GNOME-style calendar on the right. Later: events (Evolution Data Server), world clocks, weather. |
-| Activities overview | Super opens open windows and workspaces plus app search. **Hot Edge** (like the GNOME extension): pushing the mouse against the bottom edge opens it too, via a thin invisible layer-shell strip. |
+| Launcher (was "Activities overview") | Super / Activities dots / Super+A open a full-screen launcher: search on top (one row of app results), GNOME's paged app grid with folders (GNOME's `app-folders`), and the dash with favorites (GNOME's `favorite-apps`) and running dots. **Decision (M4.5):** no workspace cards, strip or window thumbnails; window management stays with Hyprland (keybindings, Alt+Tab, workspace dots in the bar). **Hot Edge** (bottom edge) opens it too. |
 | Quick settings | GNOME 48's menu: screenshot / lock / power (inline power menu); volume + Sound Output, microphone + Sound Input, brightness (backlight or DDC/CI); toggles Wi-Fi (networks + password), Wired, VPN, Bluetooth (devices), Power Mode, Night Light (hyprsunset), Do Not Disturb, Caffeine, Airplane Mode. Toggles with an arrow open their menu inline below the row, one at a time. Orange mic indicator in the bar while recording. Not yet: Settings gear (M5), Background Apps (M4), Dark Style (removed by choice). |
 | Shortcut cheat sheet | Overlay listing all keybindings, generated from the Hyprland config. |
-| Welcome | First-boot app: Flatpak picks, Secure Boot key enrollment, dotfiles, basics of tiling. |
+| OSD | GNOME-style on-screen indicator for volume, mic mute and brightness keys (part of the shell, M4.6). |
+| Welcome | **Decision:** a first-boot checklist script, not a full app: Flatpak picks, Secure Boot key enrollment, dotfiles, basics of tiling (points at the shortcut cheat sheet). |
 
 ## Apps from elsewhere
 
@@ -95,6 +101,10 @@ gaps, blur and translucency on shell surfaces, livelier animations.
   blue folders), installed from its pinned release. `Adwair-dark` (dark app
   icons) is also installed. Note: the repo has no license file yet.
 - Cursor: Bibata Modern Ice (Terra's `bibata-cursor-theme`).
+- Wallpapers: Unsplash photos in `/usr/share/backgrounds/cobalt/` (credits
+  there), listed for GNOME tools in `gnome-background-properties/cobalt.xml`.
+  hyprpaper draws them; `cobalt-wallpaper` follows GNOME's
+  `org.gnome.desktop.background` keys, so the Settings app only writes those.
 
 ## Keybindings (draft, GNOME-flavored)
 
@@ -153,8 +163,11 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 4. Background Apps in quick settings (built from tray/StatusNotifierItem apps;
    the bar gets no tray icons, like stock GNOME), Activities overview (with
    Hot Edge), shortcut cheat sheet.
-5. Settings app.
-6. Welcome app.
+   - **4.5:** launcher (app grid, search, dash), wallpapers via hyprpaper.
+   - **4.6:** session daemons as systemd user services; volume/brightness OSD.
+5. Settings app (full GNOME Settings parity, built page by page from
+   screenshots of GNOME Settings).
+6. Welcome (first-boot checklist script).
 7. Switch the main PC with `bootc switch` (rollback to Bazzite available).
 
 ## Extras
@@ -172,7 +185,8 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 - Background Apps hover states (compare GNOME 48): the "N Background Apps ›"
   row should highlight as a full-width pill; an app row should highlight as one
   rounded rectangle covering the icon, name and ✕, not just the name part.
-- Overview stage 2: dash (dock) and workspace thumbnails.
+- App grid: GNOME's custom drag-and-drop order (`app-picker-layout`).
+- Launcher search providers like GNOME's result sections: Settings pages (with the M5 Settings app), files (localsearch), maybe Flathub apps.
 - `build-disk.yml`: migrate to `osbuild/image-builder-action` before we need
   an installer ISO.
 

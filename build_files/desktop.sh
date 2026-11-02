@@ -10,6 +10,7 @@ dnf5 -y install \
     xdg-desktop-portal-hyprland \
     hyprlock \
     hypridle \
+    hyprpaper \
     hyprpolkitagent \
     hyprland-guiutils \
     hyprsunset
@@ -46,8 +47,7 @@ dnf5 -y install \
     gnome-keyring
 
 # Screenshots, clipboard, media keys, brightness (brightnessctl for laptop
-# panels, ddcutil for external monitors over DDC/CI) and a temporary launcher (fuzzel is
-# replaced by the AGS overview/launcher in M3/M4)
+# panels, ddcutil for external monitors over DDC/CI)
 dnf5 -y install \
     grim \
     slurp \
@@ -55,8 +55,7 @@ dnf5 -y install \
     cliphist \
     brightnessctl \
     ddcutil \
-    playerctl \
-    fuzzel
+    playerctl
 
 # Adwaita look for GTK3/GTK4 apps and the shell
 dnf5 -y install \

@@ -17,7 +17,6 @@ export default function Bar({ gdkmonitor }: { gdkmonitor: Gdk.Monitor }) {
   return (
     <window
       $={(self) => (win = self)}
-      visible
       name={`bar-${gdkmonitor.connector}`}
       namespace="cobalt-bar"
       class="bar"
@@ -25,6 +24,9 @@ export default function Bar({ gdkmonitor }: { gdkmonitor: Gdk.Monitor }) {
       exclusivity={Astal.Exclusivity.EXCLUSIVE}
       anchor={TOP | LEFT | RIGHT}
       application={app}
+      // Last: props apply in order, and a layer surface keeps the layer it
+      // was mapped with
+      visible
     >
       <centerbox class="bar-content">
         <box $type="start">

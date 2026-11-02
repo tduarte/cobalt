@@ -1,7 +1,7 @@
 import AstalHyprland from "gi://AstalHyprland"
 import Gtk from "gi://Gtk?version=4.0"
 import { For, createBinding, createComputed } from "ags"
-import { toggleOverview } from "./Overview"
+import { toggleOverview } from "./overview"
 
 // GNOME 45+ style Activities button: a dot per workspace, the active one
 // stretched into a pill. Like GNOME, the whole button opens the overview;

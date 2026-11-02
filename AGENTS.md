@@ -84,6 +84,13 @@ Add new COPRs to the loops in both `repos.sh` (enable) and `finalize.sh`
   `message_async("dispatch hl.dsp....")` instead (see `shell/lib/system.ts`).
 - hypridle/hyprlock still use the classic hyprlang format; pass their config
   paths explicitly.
+- Prefer stock Hypr tools over shell code for things that must survive a shell
+  crash (lock: hyprlock, idle: hypridle, wallpaper: hyprpaper). The wallpaper
+  was once a shell window and ended up above all apps.
+- Wallpaper: `cobalt-wallpaper` starts hyprpaper (`hyprpaper.conf` has no
+  wallpaper) and sets it over IPC from GNOME's background keys
+  (`hyprctl hyprpaper wallpaper ', <path>, cover'`), re-applying on
+  `gsettings monitor`. Check with `hyprctl hyprpaper listactive`.
 
 ## Dev VM (GNOME Boxes)
 
@@ -166,6 +173,9 @@ Hard-won facts:
   layer-shell bar size to their content and aren't kept on screen, so they
   widened and ran off the right edge. `widget/PanelMenu.tsx` anchors each
   menu under the bar with a fixed-width scroller.
+- **Set `visible` last on `<window>`.** Props apply in order and a layer
+  surface keeps the layer it was first mapped with; `visible` before `layer=`
+  mapped it on TOP.
 - **Layer-shell windows keep their first size.** A menu window that grew when
   an inline sub-menu opened got clipped instead. Menu windows therefore span
   the full height (panel at the top, a transparent click-to-close area below).
@@ -186,12 +196,32 @@ Hard-won facts:
   `busctl --user get-property <service> <path> org.kde.StatusNotifierItem Id`.
 - Pointer-driven features can be tested over SSH by warping the cursor:
   `hyprctl dispatch 'hl.dsp.cursor.move({ x = 640, y = 799 })'`.
+- **A layer window whose content is wider/taller than the monitor gets scaled
+  down by Hyprland**, so everything looks squeezed. Gtk.Fixed counts children
+  placed off-screen (the overview's neighbor cards), and fixed tile math must
+  include CSS padding. Clip overflow with a `scrolledwindow` using
+  `hscrollbarPolicy={Gtk.PolicyType.EXTERNAL}`. Check with
+  `ags request -i cobalt overview debug`: the stack must be exactly the monitor
+  width.
+- **Each `<With>` needs its own container box** when it has siblings: a
+  re-render re-appends its widget at the end (the strip jumped below the grid).
+- Create JSX widgets during render, not inside `$=` callbacks or
+  `.subscribe()` handlers ("out of tracking context: will not be able to
+  cleanup" = they leak). Build them in the component body and only `put()` /
+  `append()` them in the callback, or use `<With>`.
+- Overview QA hooks: `ags request -i cobalt overview [apps | search <text> |
+  folder <id> | debug]`.
 - Only one menu is open at a time (`lib/menus.ts` state); a backdrop window
   covers the work area *below* the bar so outside clicks close the menu but
   bar buttons still work.
 
 ## Visual QA (do this before handing UI to the user)
 
+- Check the **desktop with app windows open** after any change to layer
+  windows (`hyprctl layers` shows each namespace's level), and that every
+  expected layer (`cobalt-bar`, `cobalt-hot-edge`, `hyprpaper`) is listed.
+- In the VM, start test apps as `env LIBGL_ALWAYS_SOFTWARE=1 ghostty` (plain
+  `ghostty` crashes on virgl) and `flatpak run org.gnome.TextEditor`.
 - Capture **full screen** for every state, never just crops: each menu, each
   inline sub-menu (`toggle quick-settings <sub-menu>`), plus the closed bar.
   Combine with `magick montage` into a labeled contact sheet and check edges,

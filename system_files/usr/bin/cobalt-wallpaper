@@ -1,0 +1,47 @@
+#!/usr/bin/bash
+# Draws the desktop wallpaper with hyprpaper and keeps it in sync with GNOME's
+# org.gnome.desktop.background, so the Settings app (and anything else that
+# writes GNOME's keys) changes it. Started once from hyprland.lua.
+
+set -uo pipefail
+
+hyprpaper --config /usr/share/cobalt/hypr/hyprpaper.conf &
+
+apply() {
+    local scheme key uri path fit
+    scheme="$(gsettings get org.gnome.desktop.interface color-scheme)"
+    key=picture-uri
+    [[ "$scheme" == "'prefer-dark'" ]] && key=picture-uri-dark
+    uri="$(gsettings get org.gnome.desktop.background "$key")"
+    [[ "$uri" == "''" ]] && uri="$(gsettings get org.gnome.desktop.background picture-uri)"
+    uri="${uri#\'}"; uri="${uri%\'}"
+    # file:// URI to a path, decoding %XX escapes
+    path="${uri#file://}"
+    path="$(printf '%b' "${path//%/\\x}")"
+    [[ -f "$path" ]] || return
+    case "$(gsettings get org.gnome.desktop.background picture-options)" in
+        "'scaled'" | "'centered'") fit=contain ;;
+        "'stretched'") fit=fill ;;
+        "'wallpaper'") fit=tile ;;
+        *) fit=cover ;;
+    esac
+    hyprctl hyprpaper wallpaper ", $path, $fit" >/dev/null
+}
+
+# hyprpaper's IPC socket takes a moment to come up
+for _ in $(seq 50); do
+    hyprctl hyprpaper listactive >/dev/null 2>&1 && break
+    sleep 0.1
+done
+apply
+
+# Re-apply when the wallpaper, its fit or the light/dark style changes
+{
+    gsettings monitor org.gnome.desktop.background &
+    gsettings monitor org.gnome.desktop.interface color-scheme &
+    wait
+} | while read -r line; do
+    case "$line" in
+        picture-uri* | picture-options* | color-scheme*) apply ;;
+    esac
+done

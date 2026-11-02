@@ -1,7 +1,7 @@
 import app from "ags/gtk4/app"
 import { Astal, Gtk } from "ags/gtk4"
 import GLib from "gi://GLib"
-import { showOverview } from "./Overview"
+import { showOverview } from "./overview"
 
 const DWELL_MS = 120
 

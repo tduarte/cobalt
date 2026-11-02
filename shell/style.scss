@@ -537,17 +537,17 @@ button.background-apps-row {
   }
 }
 
-// ---- Activities overview ----
+// ---- Launcher (Super): search, paged app grid, dash ----
 
 window.overview {
   background: transparent;
 }
 
 .overview-content {
-  // Nearly opaque: the windows themselves are shown as thumbnails
-  background-color: rgba(22, 22, 25, 0.94);
+  // Darkened wallpaper behind the launcher (blurred by the layer rule)
+  background-color: rgba(24, 24, 28, 0.78);
   color: $fg;
-  padding: 24px 80px 40px 80px;
+  padding: 16px 0 20px 0;
 }
 
 entry.overview-search,
@@ -555,52 +555,65 @@ entry.overview-search,
   min-height: 40px;
   border-radius: 999px;
   padding: 0 16px;
-  margin-bottom: 32px;
-  background-color: rgba(255, 255, 255, 0.12);
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
   color: $fg;
-  font-size: 12pt;
+  font-size: 11pt;
   box-shadow: none;
   border: none;
 }
 
-button.window-preview {
+// Dash
+.dash {
+  margin-top: 20px;
+  padding: 8px 10px 4px 10px;
+  border-radius: 24px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+button.dash-item {
+  padding: 6px 6px 2px 6px;
+  border-radius: 16px;
   background: transparent;
-  background-image: none;
   border: none;
   box-shadow: none;
-  padding: 0;
+  color: $fg;
 
-  .thumb-frame {
-    border-radius: 12px;
-    background-color: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  &:hover,
+  &.active {
+    background-color: rgba(255, 255, 255, 0.12);
   }
 
-  .window-app-icon {
-    margin-bottom: -24px;
-    -gtk-icon-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-  }
-
-  .window-title {
-    margin-top: 18px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    background-color: rgba(0, 0, 0, 0.6);
-    font-weight: bold;
-  }
-
-  &:hover .thumb-frame {
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35), 0 4px 16px rgba(0, 0, 0, 0.5);
+  &.show-apps image {
+    min-width: 48px;
+    min-height: 48px;
   }
 }
 
+.running-dot {
+  min-width: 5px;
+  min-height: 5px;
+  border-radius: 999px;
+  background-color: $fg;
+
+  &.hidden {
+    background-color: transparent;
+  }
+}
+
+.dash-separator {
+  min-width: 1px;
+  margin: 10px 6px 14px 6px;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+// App grid
 button.app-tile {
   min-width: 128px;
   min-height: 128px;
-  padding: 12px;
+  padding: 10px;
   border-radius: 20px;
   background: transparent;
-  background-image: none;
   border: none;
   box-shadow: none;
   color: $fg;
@@ -608,6 +621,64 @@ button.app-tile {
   &:hover,
   &:focus-visible {
     background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.folder-icon {
+  min-width: 72px;
+  min-height: 72px;
+  padding: 4px;
+  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+button.page-arrow {
+  min-width: 48px;
+  min-height: 48px;
+  margin: 0 36px;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: $fg;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0;
+  }
+}
+
+button.page-dot {
+  min-width: 10px;
+  min-height: 10px;
+  padding: 0;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+  box-shadow: none;
+
+  &.active {
+    background-color: $fg;
+  }
+}
+
+.folder-backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.folder-popup {
+  background-color: #333338;
+  border-radius: 28px;
+  padding: 24px 28px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+
+  .folder-title {
+    font-size: 16pt;
+    font-weight: bold;
   }
 }
 
