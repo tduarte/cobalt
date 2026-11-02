@@ -4,6 +4,25 @@ A bootc image that will replace Bazzite on the main PC: Hyprland with a
 GNOME-style shell and libadwaita apps, on Universal Blue's desktop-less base,
 keeping Bazzite's gaming stack.
 
+**Goal: the GNOME experience with Hyprland's tiling and personalization.**
+
+**Principle: reuse GNOME first.** GNOME is three layers, and only the last
+one is tied to GNOME Shell/Mutter:
+
+1. Apps (Files, Calendar, Weather...): use them as they are, including their
+   search providers.
+2. Services and storage under them (GSettings keys, portals, GVfs/udisks,
+   gnome-keyring, Flatpak's permission store, NetworkManager, UPower,
+   power-profiles-daemon...): use them as they are; settings are written to
+   GNOME's own keys and files so apps behave exactly as on GNOME.
+3. GNOME Shell, Mutter and the parts of gnome-settings-daemon that need them
+   (banners, search UI, automount/autorun, idle, Night Light, display
+   config): this is the only layer we rebuild, in our shell and small
+   session daemons, following GNOME's keys and behavior.
+
+Before building something, check whether a GNOME component already does it
+outside the shell.
+
 Hardware it targets first: ASUS ROG Strix B850-I, Ryzen 9 9900X, Radeon
 RX 9070 (games, desktop, dev VM), Radeon 610M iGPU, Secure Boot on with the
 Universal Blue key enrolled.
@@ -175,12 +194,26 @@ gaps, blur and translucency on shell surfaces, livelier animations.
      (devices' batteries, power mode, power button, dim/blank/suspend via
      hypridle), Multitasking (Hot Edge, workspaces), Appearance (accent,
      backgrounds)
-   - Apps (default apps, removable media), Notifications (DND, per app),
-     Search (launcher providers)
-   - Mouse & Touchpad, Keyboard (layouts, compose/alternate keys, shortcut
-     editor), Accessibility, Privacy & Security
-   - System: Region & Language, Date & Time (incl. top bar clock options),
-     Users, Secure Shell, About (cobalt logo, device name, hardware)
+   - Apps (Default Apps only), Notifications (DND, per-app list; the shell honors GNOME's notification
+     keys; no lock screen option), Search page dropped (see below)
+   - Mouse & Touchpad (Hyprland input), Keyboard (layouts from GNOME's xkb
+     list, Super+Space, alternate characters and compose keys, shortcut
+     editor), Privacy & Security (screen lock, location / camera /
+     microphone with per-app permissions, file history and trash)
+   - System: About (cobalt logo, device name, hardware, details), Date & Time
+     (automatic time and zone, zone picker, clock format, first weekday, top
+     bar clock options), Secure Shell, Region & Language (your language and
+     formats, and the login screen's), Users (all accounts: add/remove, admin, autologin, fingerprint)
+   - Before batch 3, regardless of pages: run XDG autostart and GNOME's
+     session services (localsearch, evolution-alarm-notify), the working
+     gnome-settings-daemon plugins, and test xdg-desktop-portal-gnome's
+     dialogs (reuse audit)
+   - **Descoped (decision 2026-11-01):** per-app pages, Removable Media
+     (page and handler; drives mount when opened in Files), the whole
+     Accessibility page, launcher search providers
+     and the Search page, IBus input methods, per-window layouts, Device
+     Security, Thunderbolt, problem reporting, Printers, Sharing, Color
+     Management, Online Accounts, Wellbeing
 6. Welcome (first-boot checklist script).
 7. Switch the main PC with `bootc switch` (rollback to Bazzite available).
 
@@ -196,6 +229,8 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 
 ## Backlog (polish)
 
+- **Reuse audit:** done 2026-11-01; findings and decisions in "Reuse audit"
+  below.
 - Displays: arrangement of several monitors (drag to position, primary
   display); today each monitor is configured on its own.
 - Sound: alert sound picker and System Sounds volume (nothing plays alert
@@ -212,6 +247,45 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 - Launcher search providers like GNOME's result sections: Settings pages (with the M5 Settings app), files (localsearch), maybe Flathub apps.
 - `build-disk.yml`: migrate to `osbuild/image-builder-action` before we need
   an installer ISO.
+
+## Reuse audit (2026-11-01)
+
+Tested in the dev VM under Hyprland.
+
+- **gnome-settings-daemon plugins that run as-is:** housekeeping (disk space
+  warnings, trash/temp cleanup), datetime (automatic time zone), print
+  notifications, sharing (Sharing page backend), a11y-settings, rfkill,
+  smartcard, usb-protection, wwan, sound. Their units refuse manual start
+  (tied to gnome-session), so run the binaries from our own units.
+- **Need Mutter/Shell, replaced by ours:** power, color (Night Light),
+  media-keys, keyboard, screensaver-proxy. xsettings runs but can't read the
+  scale from Mutter (maybe useful for X11 apps like Steam; to test).
+- **XDG autostart doesn't run in our session** (a gap): nothing from
+  /etc/xdg/autostart or ~/.config/autostart starts (apps set to start at
+  login, Orca). GNOME's own services ship systemd units instead
+  (localsearch-3 for file search, evolution-alarm-notify for reminders),
+  which GNOME starts from its session; ours should start them too, plus
+  systemd's xdg-desktop-autostart.target.
+- **Libraries/services to use directly:** Goa (Online Accounts), ECal/EDS and
+  GNOME Shell's calendar server (date menu events), GNOME Shell's
+  hotplug-sniffer (what's on a USB drive, for autorun), localsearch (file
+  search provider), gcr (keyring prompts).
+- **xdg-desktop-portal-gnome** also offers FileChooser (GTK 4), AppChooser,
+  Access (camera/mic prompts), Account, Print, Wallpaper; to test as
+  replacements for the GTK 3 ones from xdg-desktop-portal-gtk.
+- **GNOME Settings itself (gnome-control-center 50, already installed as a
+  GDM dependency) runs under Hyprland** with `XDG_CURRENT_DESKTOP=GNOME`. All
+  panels load except Displays (needs Mutter's DisplayConfig API; Night Light
+  is inside it). Online Accounts, Printers, Sharing (with gsd-sharing),
+  Color, Wellbeing, Users, Region all load without errors. Its pages write the
+  same GNOME keys our adapters already follow (power/idle, wallpaper, accent,
+  hot edge, Night Light keys).
+
+**Decision (after the audit): keep our own Settings app (option C).** One
+Settings app with the full experience (displays included), not two; GNOME
+Settings isn't used, even though it runs; the audit's other findings still
+apply (gsd plugins, autostart, portals, libraries). **Online Accounts is out
+of scope.**
 
 ## Open questions
 

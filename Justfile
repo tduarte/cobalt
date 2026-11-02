@@ -487,7 +487,9 @@ vm-start:
 # Gracefully shut down the dev VM
 [group('Dev VM')]
 vm-stop:
-    flatpak run --command=virsh org.gnome.Boxes -c qemu:///session shutdown "{{ dev_vm }}"
+    # Power off from inside: virsh shutdown presses the ACPI power button, and
+    # cobalt's power button follows Settings (default: suspend)
+    just vm-ssh 'sudo systemctl poweroff' || flatpak run --command=virsh org.gnome.Boxes -c qemu:///session shutdown "{{ dev_vm }}"
 
 # SSH into the dev VM (forwarded on 127.0.0.1:2222). Arguments are passed as-is
 # to ssh, so a quoted command runs entirely in the VM, pipes included.

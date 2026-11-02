@@ -12,6 +12,11 @@ services in podman, CLIs via Homebrew.
 
 ## Working with the user
 
+- **Reuse GNOME first** (docs/BRIEF.md, "Principle"): use GNOME's apps,
+  services and settings keys as they are; only rebuild what GNOME Shell,
+  Mutter or Mutter-dependent gnome-settings-daemon parts would do. Check for
+  an existing GNOME component before writing a backend.
+
 - Put anything you need from the user (a decision, an action, an answer) at the
   **end** of the message, restated even if mentioned earlier.
 - Commit and push only when asked; a push to `main` triggers the GitHub image
@@ -139,6 +144,10 @@ Hard-won facts:
   Boxes draws on the other, the display is garbled. **Boxes drops the
   `rendernode` pin whenever it starts the VM** (libvirt then picks
   `renderD129`, the iGPU), so always start with `just vm-start`.
+- **The VM's power button suspends it** (Settings > Power > Power Button
+  Behavior, default Suspend), so `virsh shutdown` puts it to sleep instead of
+  off; `just vm-stop` powers off over SSH. Wake a suspended guest with
+  `virsh send-key silverblue43 KEY_SPACE`.
 - **Never reboot the guest** while GL is on: QEMU's SPICE aborts
   (`gl_draw_cookie` assertion). Power off and cold-start (`vm-update` does).
 - **Close Boxes before the VM restarts** and reopen it after; a Boxes window
