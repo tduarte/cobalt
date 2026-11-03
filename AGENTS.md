@@ -197,6 +197,12 @@ Hard-won facts:
   Hyprland 0.57; its workspace/monitor state is still correct.
 - The shell writes/reads GNOME's GSettings (`org.gnome.desktop.interface`) so
   libadwaita apps and the future Settings app stay in sync.
+- Settings GNOME has no key for go in our own schema
+  `io.github.tduarte.cobalt` (`system_files/usr/share/glib-2.0/schemas/`;
+  so far `accent-color-auto`). Code must check it exists
+  (`SettingsSchemaSource.lookup`), since `new Gio.Settings` on a missing
+  schema aborts the process. In the VM, install a changed schema with
+  `sudo bootc usr-overlay` + `glib-compile-schemas`.
 
 ## Settings app
 
@@ -317,6 +323,12 @@ Hard-won facts:
   `busctl --user get-property <service> <path> org.kde.StatusNotifierItem Id`.
 - Pointer-driven features can be tested over SSH by warping the cursor:
   `hyprctl dispatch 'hl.dsp.cursor.move({ x = 640, y = 799 })'`.
+- **Real mouse input (clicks, drags) can be injected through QEMU's monitor**,
+  e.g. for launcher drag and drop: `virsh qemu-monitor-command silverblue43
+  '{"execute":"input-send-event","arguments":{"events":[...]}}'` with `abs`
+  x/y events (0–32767 across the 1920×1080 screen) and `btn` left
+  down/up. Move in several steps while the button is down so GTK sees a drag.
+  Run virsh through Boxes' Flatpak as in "Dev VM".
 - **A layer window whose content is wider/taller than the monitor gets scaled
   down by Hyprland**, so everything looks squeezed. Gtk.Fixed counts children
   placed off-screen (the overview's neighbor cards), and fixed tile math must

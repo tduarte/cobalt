@@ -86,15 +86,36 @@ function folderName(raw: string): string {
   return raw.replace(/^X-GNOME-Shell-/, "").replace(/\.directory$/, "")
 }
 
+// Folder changes (ours or anyone's), for the launcher to rebuild its grid
+const folderListeners: (() => void)[] = []
+const foldersChanged = () => folderListeners.forEach((cb) => cb())
+export const onFoldersChanged = (cb: () => void) => folderListeners.push(cb)
+folderSettings.connect("changed::folder-children", foldersChanged)
+
+// One Settings object per folder, so our own writes read back at once
+const folderCache = new Map<string, Gio.Settings>()
+function folderKeys(id: string) {
+  let s = folderCache.get(id)
+  if (!s) {
+    s = new Gio.Settings({
+      schema_id: "org.gnome.desktop.app-folders.folder",
+      path: `/org/gnome/desktop/app-folders/folders/${id}/`,
+    })
+    s.connect("changed", foldersChanged)
+    folderCache.set(id, s)
+  }
+  return s
+}
+
+const byName = (a: AstalApps.Application, b: AstalApps.Application) =>
+  a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+
 export function folders(): Folder[] {
   const all = apps.get_list()
   return folderSettings
     .get_strv("folder-children")
     .map((id) => {
-      const s = new Gio.Settings({
-        schema_id: "org.gnome.desktop.app-folders.folder",
-        path: `/org/gnome/desktop/app-folders/folders/${id}/`,
-      })
+      const s = folderKeys(id)
       const listed = new Set(s.get_strv("apps"))
       const categories = s.get_strv("categories")
       const excluded = new Set(s.get_strv("excluded-apps"))
@@ -103,13 +124,85 @@ export function folders(): Folder[] {
           !excluded.has(a.entry) &&
           (listed.has(a.entry) || (categories.length > 0 && categories.some((c) => (a.categories ?? []).includes(c)))),
       )
-      return { id, name: folderName(s.get_string("name")), apps: members.sort((a, b) => a.name.localeCompare(b.name)) }
+      return { id, name: folderName(s.get_string("name")), apps: members.sort(byName) }
     })
     .filter((f) => f.apps.length > 0)
 }
 
-// App grid items: folders and the apps not in a folder, alphabetical like a
-// fresh GNOME (GNOME's custom drag-and-drop order isn't supported yet)
+// ---- Editing folders (drag and drop), the way GNOME Shell writes them ----
+
+const without = (list: string[], item: string) => list.filter((x) => x !== item)
+
+function deleteFolder(id: string) {
+  folderSettings.set_strv("folder-children", without(folderSettings.get_strv("folder-children"), id))
+  const s = folderKeys(id)
+  for (const key of ["name", "apps", "categories", "excluded-apps", "translate"]) s.reset(key)
+}
+
+export function removeFromFolder(appId: string, folderId: string) {
+  const s = folderKeys(folderId)
+  const listed = s.get_strv("apps")
+  // Listed apps are dropped from the list; apps there by category are excluded
+  if (listed.includes(appId)) s.set_strv("apps", without(listed, appId))
+  else s.set_strv("excluded-apps", [...without(s.get_strv("excluded-apps"), appId), appId])
+  // GNOME deletes a folder once it's empty
+  if (!folders().some((f) => f.id === folderId)) deleteFolder(folderId)
+}
+
+function leaveFolders(appId: string, except?: string) {
+  for (const f of folders()) if (f.id !== except && f.apps.some((a) => a.entry === appId)) removeFromFolder(appId, f.id)
+}
+
+export function moveToFolder(appId: string, folderId: string) {
+  leaveFolders(appId, folderId)
+  const s = folderKeys(folderId)
+  s.set_strv("excluded-apps", without(s.get_strv("excluded-apps"), appId))
+  if (!s.get_strv("apps").includes(appId)) s.set_strv("apps", [...s.get_strv("apps"), appId])
+}
+
+// Folder names for categories, when the new folder's apps share one
+const CATEGORY_NAMES: [string, string][] = [
+  ["Game", "Games"],
+  ["Development", "Development"],
+  ["Graphics", "Graphics"],
+  ["Office", "Office"],
+  ["AudioVideo", "Sound & Video"],
+  ["Network", "Internet"],
+  ["Education", "Education"],
+  ["Science", "Science"],
+  ["Settings", "Settings"],
+  ["System", "System"],
+  ["Utility", "Utilities"],
+]
+
+// Dropping an app on another makes a folder of the two, like GNOME
+export function createFolder(appIds: string[]): string {
+  for (const id of appIds) leaveFolders(id)
+  const shared = appIds
+    .map((id) => new Set(appById(id)?.categories ?? []))
+    .reduce((a, b) => new Set([...a].filter((c) => b.has(c))))
+  // A name no other folder has, so two folders never look the same
+  const taken = new Set(folders().map((f) => f.name))
+  const name = CATEGORY_NAMES.find(([c, n]) => shared.has(c) && !taken.has(n))?.[1] ?? "Unnamed Folder"
+  const id = GLib.uuid_string_random()
+  const s = folderKeys(id)
+  s.set_string("name", name)
+  s.set_boolean("translate", false)
+  s.set_strv("apps", appIds)
+  folderSettings.set_strv("folder-children", [...folderSettings.get_strv("folder-children"), id])
+  return id
+}
+
+export function renameFolder(id: string, name: string) {
+  if (name.trim()) folderKeys(id).set_string("name", name.trim())
+}
+
+export function folderOf(appId: string): string | null {
+  return folders().find((f) => f.apps.some((a) => a.entry === appId))?.id ?? null
+}
+
+// App grid items: folders and the apps not in a folder, always alphabetical
+// (drag and drop moves apps in and out of folders but doesn't reorder)
 export type GridItem = { kind: "app"; app: AstalApps.Application } | { kind: "folder"; folder: Folder }
 
 export function gridItems(): GridItem[] {

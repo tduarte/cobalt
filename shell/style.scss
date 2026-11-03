@@ -638,6 +638,17 @@ button.app-tile {
   background-color: rgba(255, 255, 255, 0.12);
 }
 
+// Drag and drop: the dragged app fades, and the tile it would land on lights up
+button.app-tile.dragging {
+  opacity: 0.3;
+}
+button.app-tile:drop(active) {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+button.folder-tile:drop(active) .folder-icon {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
 button.page-arrow {
   min-width: 48px;
   min-height: 48px;
@@ -682,9 +693,16 @@ button.page-dot {
   padding: 24px 28px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 
+  // An editable label: click to rename
   .folder-title {
     font-size: 16pt;
     font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 10px;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
   }
 }
 

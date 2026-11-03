@@ -61,8 +61,9 @@ The full reasoning, decisions and milestones are in
   the selected day's events (Evolution Data Server, through GNOME Shell's
   calendar server), world clocks (GNOME Clocks) and the weather (GNOME
   Weather's location).
-- Launcher with search, GNOME's app grid and folders, and the dash
-  (favorites and running apps); also on the bottom Hot Edge.
+- Launcher with search, GNOME's app grid and folders (drag apps in and out,
+  rename folders), and the dash (favorites and running apps); also on the
+  bottom Hot Edge.
 - Alt+Tab app switcher, Log Out / Restart / Power Off dialog, screenshot and
   screencast UI, keyboard shortcut sheet, update notifications.
 - GNOME's password prompts: the polkit agent ("Authentication Required")
@@ -71,7 +72,7 @@ The full reasoning, decisions and milestones are in
 **Settings** (libadwaita, `settings/`)
 - Wi-Fi, Network (wired, VPN, proxy), Bluetooth, Displays (resolution,
   refresh rate, VRR, HDR, scale, Night Light), Sound, Power, Multitasking,
-  Appearance (accent color, backgrounds), Apps, Notifications, Mouse &
+  Appearance (accent color, or Auto from the background; backgrounds), Apps, Notifications, Mouse &
   Touchpad, Keyboard (layouts and editable shortcuts), Privacy & Security,
   and System (region, date and time, users, SSH, about).
 - Dark only. Changes apply live to Hyprland and are saved to files the

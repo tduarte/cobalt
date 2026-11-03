@@ -53,7 +53,9 @@ const AppItem = GObject.registerClass(
 )
 
 function categoryRow(c: Category) {
-  const apps = Gio.AppInfo.get_all_for_type(c.main).filter((a) => a.should_show())
+  const apps = Gio.AppInfo.get_all_for_type(c.main)
+    .filter((a) => a.should_show())
+    .sort((a, b) => a.get_display_name().localeCompare(b.get_display_name()))
   const current = Gio.AppInfo.get_default_for_type(c.main, false)
   const row = new Adw.ComboRow({ title: c.title })
   if (apps.length === 0) {

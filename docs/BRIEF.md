@@ -268,7 +268,10 @@ gaps, blur and translucency on shell surfaces, livelier animations.
      and Weather are in the Flathub list
 7. **Hyprland personalization:** a Windows & Tiling page (layout, gaps,
    borders, rounding, blur, opacity, animations), a window rules editor
-   (per-app float, workspace, opacity, size), Auto accent color.
+   (per-app float, workspace, opacity, size), Auto accent color (done: an
+   Auto swatch in Appearance; our own `io.github.tduarte.cobalt
+   accent-color-auto` key, and the shell picks GNOME's `accent-color` from
+   the background).
 8. Welcome (first-boot checklist script).
 9. Switch the main PC with `bootc switch` (rollback to Bazzite available).
 
@@ -299,13 +302,14 @@ gaps, blur and translucency on shell surfaces, livelier animations.
   sounds yet); input level meter.
 - Multitasking: GNOME's multi-monitor workspaces and app switching options.
 - Hyprland's active window border could follow the accent color.
-- **Auto accent color** (after M5): an "Auto" swatch in Appearance that picks
-  the accent from the current wallpaper and updates when it changes.
 
 - Background Apps hover states (compare GNOME 48): the "N Background Apps ›"
   row should highlight as a full-width pill; an app row should highlight as one
   rounded rectangle covering the icon, name and ✕, not just the name part.
-- App grid: GNOME's custom drag-and-drop order (`app-picker-layout`).
+- App grid: drag and drop moves apps into, out of and between folders (and
+  makes folders), writing GNOME's app-folders keys; folder names are
+  editable. The grid stays alphabetical by choice: no custom order
+  (`app-picker-layout`).
 - Launcher search providers like GNOME's result sections: Settings pages (with the M5 Settings app), files (localsearch), maybe Flathub apps.
 - `build-disk.yml`: migrate to `osbuild/image-builder-action` before we need
   an installer ISO.

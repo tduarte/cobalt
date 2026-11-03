@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- cobalt's own settings, for what GNOME has no key for -->
+<schemalist>
+  <schema id="io.github.tduarte.cobalt" path="/io/github/tduarte/cobalt/">
+    <key name="accent-color-auto" type="b">
+      <default>false</default>
+      <summary>Accent color from the background</summary>
+      <description>When on, the shell picks org.gnome.desktop.interface accent-color from the current background picture and updates it when the background changes.</description>
+    </key>
+  </schema>
+</schemalist>

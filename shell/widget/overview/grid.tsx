@@ -1,17 +1,26 @@
 import AstalApps from "gi://AstalApps"
 import Gdk from "gi://Gdk?version=4.0"
+import GObject from "gi://GObject"
 import Gtk from "gi://Gtk?version=4.0"
 import Pango from "gi://Pango"
-import { Accessor, Setter, With, createState } from "ags"
-import { Folder, GridItem } from "./model"
+import { Accessor, Setter, With } from "ags"
+import { Folder, GridItem, appById, createFolder, moveToFolder, removeFromFolder, renameFolder } from "./model"
 
 // Real tile width: CSS min-width 128px + 10px padding on each side
 export const TILE = 148
 export const TILE_GAP = 24
 
-export function AppTile({ app, onLaunch }: { app: AstalApps.Application; onLaunch: (a: AstalApps.Application) => void }) {
+export function AppTile({
+  app,
+  onLaunch,
+  setup,
+}: {
+  app: AstalApps.Application
+  onLaunch: (a: AstalApps.Application) => void
+  setup?: (self: Gtk.Button) => void
+}) {
   return (
-    <button class="app-tile" onClicked={() => onLaunch(app)}>
+    <button class="app-tile" onClicked={() => onLaunch(app)} $={setup}>
       <box orientation={Gtk.Orientation.VERTICAL} spacing={10} valign={Gtk.Align.CENTER}>
         <image iconName={app.iconName || "application-x-executable"} pixelSize={72} />
         <label label={app.name} ellipsize={Pango.EllipsizeMode.END} maxWidthChars={13} justify={Gtk.Justification.CENTER} />
@@ -20,11 +29,88 @@ export function AppTile({ app, onLaunch }: { app: AstalApps.Application; onLaunc
   )
 }
 
+// ---- Drag and drop, like GNOME's app grid: drop an app on a folder to move
+// it there, on another app to make a folder of the two, or out of an open
+// folder to take it out. The grid stays alphabetical. ----
+
+// The app being dragged (desktop id), so drops from other programs are ignored
+let dragging: string | null = null
+
+function dragSource(tile: Gtk.Widget, app: AstalApps.Application) {
+  const source = new Gtk.DragSource({ actions: Gdk.DragAction.MOVE })
+  source.connect("prepare", () => {
+    const value = new GObject.Value()
+    value.init(GObject.TYPE_STRING)
+    value.set_string(app.entry)
+    return Gdk.ContentProvider.new_for_value(value)
+  })
+  source.connect("drag-begin", () => {
+    dragging = app.entry
+    const theme = Gtk.IconTheme.get_for_display(tile.get_display())
+    const icon = theme.lookup_icon(app.iconName || "application-x-executable", null, 72, tile.get_scale_factor(), Gtk.TextDirection.NONE, 0)
+    source.set_icon(icon, 36, 36)
+    tile.add_css_class("dragging")
+  })
+  source.connect("drag-end", () => {
+    dragging = null
+    tile.remove_css_class("dragging")
+  })
+  tile.add_controller(source)
+}
+
+// Accepts an app from the grid; onDrop returns whether it did something
+function dropTarget(widget: Gtk.Widget, onDrop: (appId: string, x: number, y: number) => boolean) {
+  const target = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.MOVE)
+  target.connect("accept", () => dragging !== null)
+  target.connect("drop", (_t, value: string, x: number, y: number) => {
+    if (value !== dragging || !appById(value)) return false
+    return onDrop(value, x, y)
+  })
+  widget.add_controller(target)
+}
+
+// An app tile in the grid (folder = null) or inside an open folder
+function GridAppTile({
+  app,
+  folder,
+  onLaunch,
+}: {
+  app: AstalApps.Application
+  folder: Folder | null
+  onLaunch: (a: AstalApps.Application) => void
+}) {
+  return (
+    <AppTile
+      app={app}
+      onLaunch={onLaunch}
+      setup={(self) => {
+        dragSource(self, app)
+        if (!folder)
+          dropTarget(self, (id) => {
+            if (id === app.entry) return false
+            createFolder([app.entry, id])
+            return true
+          })
+      }}
+    />
+  )
+}
+
 // GNOME folder tile: up to four app icons in a rounded square
 function FolderTile({ folder, onOpen }: { folder: Folder; onOpen: (f: Folder) => void }) {
   const icons = folder.apps.slice(0, 4)
   return (
-    <button class="app-tile folder-tile" onClicked={() => onOpen(folder)}>
+    <button
+      class="app-tile folder-tile"
+      onClicked={() => onOpen(folder)}
+      $={(self) =>
+        dropTarget(self, (id) => {
+          if (folder.apps.some((a) => a.entry === id)) return false
+          moveToFolder(id, folder.id)
+          return true
+        })
+      }
+    >
       <box orientation={Gtk.Orientation.VERTICAL} spacing={10} valign={Gtk.Align.CENTER}>
         <box class="folder-icon" halign={Gtk.Align.CENTER}>
           <box orientation={Gtk.Orientation.VERTICAL} spacing={6} halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER} hexpand vexpand>
@@ -66,6 +152,7 @@ export function PagedGrid({
   onLaunch,
   openFolder,
   setOpenFolder,
+  pageState,
 }: {
   items: GridItem[]
   cols: number
@@ -73,15 +160,22 @@ export function PagedGrid({
   onLaunch: (a: AstalApps.Application) => void
   openFolder: Accessor<Folder | null>
   setOpenFolder: Setter<Folder | null>
+  // Kept by the caller so a rebuilt grid (after a drop) stays on its page
+  pageState: [Accessor<number>, Setter<number>]
 }) {
   const perPage = cols * rows
   const pages: GridItem[][] = []
   for (let i = 0; i < items.length; i += perPage) pages.push(items.slice(i, i + perPage))
-  const [page, setPage] = createState(0)
+  const [page, setPage] = pageState
   const go = (p: number) => setPage(Math.max(0, Math.min(pages.length - 1, p)))
+  if (page.get() > pages.length - 1) go(pages.length - 1)
 
   const render = (item: GridItem) =>
-    item.kind === "app" ? <AppTile app={item.app} onLaunch={onLaunch} /> : <FolderTile folder={item.folder} onOpen={setOpenFolder} />
+    item.kind === "app" ? (
+      <GridAppTile app={item.app} folder={null} onLaunch={onLaunch} />
+    ) : (
+      <FolderTile folder={item.folder} onOpen={setOpenFolder} />
+    )
 
   return (
     <overlay vexpand hexpand>
@@ -153,6 +247,13 @@ export function PagedGrid({
             return false
           })
           self.add_controller(keys)
+          // Dropping an app outside the popup takes it out of the folder
+          dropTarget(self, (id, x, y) => {
+            const f = openFolder.get()
+            if (!f || self.pick(x, y, Gtk.PickFlags.DEFAULT) !== self) return false
+            removeFromFolder(id, f.id)
+            return true
+          })
         }}
       >
         <box
@@ -164,14 +265,35 @@ export function PagedGrid({
           hexpand
           vexpand
         >
-          <label class="folder-title" label={openFolder((f) => f?.name ?? "")} />
+          <With value={openFolder}>
+            {(f: Folder | null) =>
+              f ? (
+                // Click the name to rename the folder, like GNOME
+                <Gtk.EditableLabel
+                  class="folder-title"
+                  halign={Gtk.Align.CENTER}
+                  xalign={0.5}
+                  widthChars={20}
+                  text={f.name}
+                  tooltipText="Rename"
+                  $={(self) =>
+                    self.connect("notify::editing", () => {
+                      if (!self.editing && self.text !== f.name) renameFolder(f.id, self.text)
+                    })
+                  }
+                />
+              ) : (
+                <box />
+              )
+            }
+          </With>
           <With value={openFolder}>
             {(f: Folder | null) =>
               f ? (
                 <Rows
                   items={f.apps.map((app) => ({ kind: "app" as const, app }))}
                   cols={Math.min(4, Math.max(1, f.apps.length))}
-                  render={render}
+                  render={(item) => (item.kind === "app" ? <GridAppTile app={item.app} folder={f} onLaunch={onLaunch} /> : <box />)}
                 />
               ) : (
                 <box />

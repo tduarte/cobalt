@@ -39,6 +39,19 @@
 .accent-swatch.purple:checked { outline-color: #9141ac; }
 .accent-swatch.slate { background: #6f8396; outline-color: alpha(#6f8396, 0); }
 .accent-swatch.slate:checked { outline-color: #6f8396; }
+/* Auto: GNOME's accent colors around the wheel; its ring is the color it picked */
+.accent-swatch.auto {
+  background: conic-gradient(#3584e4, #2190a4, #3a944a, #c88800, #ed5b00, #e62d42, #d56199, #9141ac, #3584e4);
+}
+.accent-colors.current-blue .accent-swatch.auto:checked { outline-color: #3584e4; }
+.accent-colors.current-teal .accent-swatch.auto:checked { outline-color: #2190a4; }
+.accent-colors.current-green .accent-swatch.auto:checked { outline-color: #3a944a; }
+.accent-colors.current-yellow .accent-swatch.auto:checked { outline-color: #c88800; }
+.accent-colors.current-orange .accent-swatch.auto:checked { outline-color: #ed5b00; }
+.accent-colors.current-red .accent-swatch.auto:checked { outline-color: #e62d42; }
+.accent-colors.current-pink .accent-swatch.auto:checked { outline-color: #d56199; }
+.accent-colors.current-purple .accent-swatch.auto:checked { outline-color: #9141ac; }
+.accent-colors.current-slate .accent-swatch.auto:checked { outline-color: #6f8396; }
 
 /* Appearance: background thumbnails */
 .background-thumb {

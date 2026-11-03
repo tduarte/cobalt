@@ -35,28 +35,54 @@ const THUMB_W = 160
 const THUMB_H = 100
 const USER_DIR = GLib.build_filenamev([GLib.get_user_data_dir(), "backgrounds"])
 
+// Our own key for Auto (GNOME has none); the shell picks GNOME's
+// accent-color from the background while it's on
+const cobalt = Gio.SettingsSchemaSource.get_default()?.lookup("io.github.tduarte.cobalt", true)
+  ? new Gio.Settings({ schemaId: "io.github.tduarte.cobalt" })
+  : null
+
 function accentGroup() {
   const g = group("Accent Color")
   const box = new Gtk.Box({ halign: Gtk.Align.CENTER, spacing: 12, marginTop: 12, marginBottom: 12 })
   box.add_css_class("accent-colors")
   let first: Gtk.ToggleButton | null = null
-  const buttons = ACCENTS.map(([id, name]) => {
+  let syncing = false
+  const swatch = (id: string, name: string) => {
     const b = new Gtk.ToggleButton({ tooltipText: name, valign: Gtk.Align.CENTER })
     b.add_css_class("accent-swatch")
     b.add_css_class(id)
     if (first) b.set_group(first)
     else first = b
-    b.connect("toggled", () => {
-      if (b.active && iface.get_string("accent-color") !== id) iface.set_string("accent-color", id)
-    })
     box.append(b)
+    return b
+  }
+  const auto = cobalt ? swatch("auto", "Auto (from Background)") : null
+  auto?.connect("toggled", () => {
+    if (auto.active && !syncing) cobalt!.set_boolean("accent-color-auto", true)
+  })
+  const buttons = ACCENTS.map(([id, name]) => {
+    const b = swatch(id, name)
+    b.connect("toggled", () => {
+      if (!b.active || syncing) return
+      cobalt?.set_boolean("accent-color-auto", false)
+      if (iface.get_string("accent-color") !== id) iface.set_string("accent-color", id)
+    })
     return [id, b] as const
   })
   const sync = () => {
+    syncing = true
+    const isAuto = cobalt?.get_boolean("accent-color-auto") ?? false
     const current = iface.get_string("accent-color")
-    for (const [id, b] of buttons) if (id === current) b.active = true
+    if (isAuto && auto) auto.active = true
+    else for (const [id, b] of buttons) if (id === current) b.active = true
+    // The ring around Auto shows the color it picked
+    for (const [id] of ACCENTS) box.remove_css_class(`current-${id}`)
+    box.add_css_class(`current-${current}`)
+    g.description = isAuto ? "Matches the background" : ""
+    syncing = false
   }
   watch(iface, "changed::accent-color", sync)
+  if (cobalt) watch(cobalt, "changed::accent-color-auto", sync)
   sync()
   // A boxed row, like GNOME's swatch card
   const list = new Gtk.ListBox({ selectionMode: Gtk.SelectionMode.NONE })

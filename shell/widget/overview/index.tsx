@@ -7,7 +7,7 @@ import { closeMenus } from "../../lib/menus"
 import { hyprDispatch, launchApp } from "../../lib/system"
 import { Dash, DashApp, dashItems } from "./dash"
 import { AppTile, PagedGrid, TILE, TILE_GAP } from "./grid"
-import { Folder, Win, folders, gridItems, loadWindows, onFavoritesChanged, searchApps } from "./model"
+import { Folder, GridItem, Win, folders, gridItems, loadWindows, onFavoritesChanged, onFoldersChanged, searchApps } from "./model"
 
 // The launcher (Super / Activities dots / Super+A): search on top, GNOME's
 // paged app grid with folders, and the dash with favorites and running apps.
@@ -21,13 +21,37 @@ const [query, setQuery] = createState("")
 const [windows, setWindows] = createState<Win[]>([])
 const [openFolder, setOpenFolder] = createState<Folder | null>(null)
 const [favoritesVersion, setFavoritesVersion] = createState(0)
+const [items, setItems] = createState<GridItem[]>(gridItems())
+const pageState = createState(0)
 let entry: Gtk.SearchEntry | null = null
+
+// Rebuild the grid only when something in it changed: folders (drag and
+// drop, renames) or installed apps (checked when the launcher opens)
+const gridKey = (list: GridItem[]) =>
+  list.map((i) => (i.kind === "app" ? i.app.entry : `${i.folder.id}:${i.folder.name}:${i.folder.apps.map((a) => a.entry)}`)).join("|")
+
+let refreshQueued = false
+function refreshGrid() {
+  if (refreshQueued) return
+  refreshQueued = true
+  // After the drop finishes, and once for several keys written together
+  setTimeout(() => {
+    refreshQueued = false
+    const next = gridItems()
+    if (gridKey(next) !== gridKey(items.get())) setItems(next)
+    // An open folder shows its new contents, or closes once it's gone
+    const open = openFolder.get()
+    if (open) setOpenFolder(folders().find((f) => f.id === open.id) ?? null)
+  }, 50)
+}
+onFoldersChanged(refreshGrid)
 
 export function showOverview() {
   closeMenus()
   setOpenFolder(null)
   setQuery("")
   if (entry) entry.text = ""
+  refreshGrid()
   setVisible(true)
   entry?.grab_focus()
   // Only for the dash's running dots: a single cheap IPC call
@@ -154,14 +178,19 @@ export default function Overview() {
         />
         <stack vexpand transitionType={Gtk.StackTransitionType.CROSSFADE} transitionDuration={150} visibleChildName={view}>
           <box $type="named" name="apps" vexpand>
-            <PagedGrid
-              items={gridItems()}
-              cols={cols}
-              rows={rows}
-              onLaunch={launch}
-              openFolder={openFolder}
-              setOpenFolder={setOpenFolder}
-            />
+            <With value={items}>
+              {(list: GridItem[]) => (
+                <PagedGrid
+                  items={list}
+                  cols={cols}
+                  rows={rows}
+                  onLaunch={launch}
+                  openFolder={openFolder}
+                  setOpenFolder={setOpenFolder}
+                  pageState={pageState}
+                />
+              )}
+            </With>
           </box>
           <box $type="named" name="search" valign={Gtk.Align.START} halign={Gtk.Align.CENTER}>
             <With value={results}>
