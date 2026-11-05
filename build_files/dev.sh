@@ -7,7 +7,9 @@ set -ouex pipefail
 dnf5 -y install \
     ghostty \
     rocm-hip \
-    rocm-runtime
+    rocm-runtime \
+    rocm-opencl \
+    rocm-clinfo
 
 # Homebrew files are copied from ghcr.io/ublue-os/brew in the Containerfile
 systemctl enable brew-setup.service

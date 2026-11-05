@@ -37,13 +37,18 @@ dnf5 -y install \
     libastal-tray \
     libastal-wireplumber
 
-# Login screen, files, portals and keyring
+# Login screen, files, portals and secrets: oo7 is Fedora's Secret Service since
+# F45 (GDM's PAM config unlocks it at login), gcr3 has the gcr-prompter unlock
+# dialog it uses outside GNOME Shell, and gcr the SSH agent
 dnf5 -y install \
     gdm \
     nautilus \
     gvfs \
     xdg-desktop-portal-gtk \
-    gnome-keyring
+    oo7-daemon \
+    oo7-portal \
+    gcr \
+    gcr3
 
 # Screenshots, clipboard, media keys, brightness (brightnessctl for laptop
 # panels, ddcutil for external monitors over DDC/CI)

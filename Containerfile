@@ -1,13 +1,12 @@
-## Fedora and kernel versions are resolved by `just build` from base-main:latest
-## and the matching OGC kernel image, so a new Fedora release is picked up
-## automatically. When building with plain `podman build`, FEDORA_VERSION falls
-## back to 44 and the kernel to the newest ogc-<fedora> image.
-ARG FEDORA_VERSION=44
-ARG KERNEL_VERSION=""
+## Pinned on purpose: a Fedora or kernel bump is a change we test, not something
+## that arrives with a nightly build. A new Fedora can build fine and still break
+## the session. KERNEL_VERSION follows the kernel in Bazzite's stable release notes.
+ARG FEDORA_VERSION=45
+ARG KERNEL_VERSION=7.2.15-ogc1.1.fc45.x86_64
 
 # Bazzite's OGC kernel and kmods, prebuilt and signed by Universal Blue
-FROM ghcr.io/ublue-os/akmods:ogc-${FEDORA_VERSION}${KERNEL_VERSION:+-${KERNEL_VERSION}} AS akmods
-FROM ghcr.io/ublue-os/akmods-extra:ogc-${FEDORA_VERSION}${KERNEL_VERSION:+-${KERNEL_VERSION}} AS akmods-extra
+FROM ghcr.io/ublue-os/akmods:ogc-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods
+FROM ghcr.io/ublue-os/akmods-extra:ogc-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods-extra
 FROM ghcr.io/ublue-os/brew:latest AS brew
 
 # Build scripts and files are mounted into the steps that use them, never copied

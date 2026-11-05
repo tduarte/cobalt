@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+# Start Steam with extest, which stands in for the X11 XTEST extension through a
+# uinput device, so Steam Input's keyboard and mouse actions work on Wayland.
+# $LIB is expanded by the dynamic loader: /usr/lib for Steam's 32-bit client,
+# /usr/lib64 for 64-bit.
+export LD_PRELOAD='/usr/$LIB/extest/libextest.so'"${LD_PRELOAD:+:$LD_PRELOAD}"
+exec /usr/bin/steam "$@"

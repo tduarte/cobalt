@@ -12,8 +12,8 @@ if [[ -n "$region" ]]; then
     done
 fi
 
-# SSH keys through gcr-ssh-agent (gnome-keyring's agent; its socket is
-# enabled in the image), like GNOME: keys with a passphrase unlock from the
+# SSH keys through gcr-ssh-agent (its socket is enabled in the image), like
+# GNOME: keys with a passphrase unlock from the
 # login keyring. Left alone if something else already provides an agent.
 if [[ -z "${SSH_AUTH_SOCK:-}" && -n "${XDG_RUNTIME_DIR:-}" ]]; then
     export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/gcr/ssh"

@@ -12,7 +12,7 @@ one is tied to GNOME Shell/Mutter:
 1. Apps (Files, Calendar, Weather...): use them as they are, including their
    search providers.
 2. Services and storage under them (GSettings keys, portals, GVfs/udisks,
-   gnome-keyring, Flatpak's permission store, NetworkManager, UPower,
+   the Secret Service (oo7), Flatpak's permission store, NetworkManager, UPower,
    power-profiles-daemon...): use them as they are; settings are written to
    GNOME's own keys and files so apps behave exactly as on GNOME.
 3. GNOME Shell, Mutter and the parts of gnome-settings-daemon that need them
@@ -29,21 +29,25 @@ Universal Blue key enrolled.
 
 ## Base image
 
-- `FROM ghcr.io/ublue-os/base-main:latest`. It follows the newest Fedora, so a
-  failed build on a Fedora bump just pauses updates.
+- `FROM ghcr.io/ublue-os/base-main:45`. **Decision (2026-11-04):** Fedora and
+  the kernel are pinned in the `Containerfile` and bumped on purpose, because a
+  new Fedora can build fine and still break things (F45 did). Following
+  `latest` would have moved us without testing.
 - Gaming stack ported from Bazzite's `Containerfile`, one script per piece:
-  - OGC kernel from `ghcr.io/ublue-os/akmods:ogc-<fedora>`, version picked to
-    match the base image
+  - OGC kernel from `ghcr.io/ublue-os/akmods:ogc-<fedora>-<kernel>`, pinned to
+    the version Bazzite stable ships
   - Valve-patched Mesa from Terra (`terra-mesa`), Fedora's Mesa excluded
   - `terra-gamescope`, Steam from Terra
-  - `scx-scheds` / `scx-tools`
+  - `scx-scheds` / `scx-tools`, `bpftune-gaming`, `bpfrag` (off until chosen),
+    `game-devices-udev` (Terra)
+  - `extest` for Steam Input on Wayland, preloaded by `cobalt-steam`
   - Kmods: only `v4l2loopback` and `zenergy` (what this hardware uses)
   - Xwayland stays Fedora's, not Terra's: Hyprland needs the arch-tagged
     `xorg-x11-server-Xwayland(x86-64)` that Terra's doesn't provide, and
     Bazzite's Xwayland patches target the gamescope Gaming Mode session
   - Firmware, udev rules and helpers from `ublue-os/bazzite` and
     `ublue-os/packages` COPRs, chosen package by package
-- Also in the image: ROCm (`rocm-hip`, `rocm-runtime`), ghostty, distrobox,
+- Also in the image: ROCm (`rocm-hip`, `rocm-runtime`, `rocm-opencl`), ghostty, distrobox,
   podman, Homebrew.
 - **Secure Boot rule:** kernel and kernel modules only from Fedora or
   Universal Blue's prebuilt, signed images, always matching versions. Never
@@ -55,7 +59,7 @@ Universal Blue key enrolled.
   gnome-session are in the image (hard dependencies), but the GNOME session
   entry is removed: GDM only offers **Cobalt**.
 - Compositor: **Hyprland** from the `pm4rcin/Hyprland` COPR (maintained fork of
-  solopasha's; Fedora 44 itself doesn't ship Hyprland), **dwindle** layout.
+  solopasha's; Fedora 45 itself doesn't ship Hyprland), **dwindle** layout.
 - Portals: `xdg-desktop-portal-hyprland` (screenshots, screencast) and
   `xdg-desktop-portal-gtk` (file chooser, settings/appearance).
 - Config is **Lua** (Hyprland 0.55+). `cobalt.desktop` runs
@@ -167,13 +171,14 @@ gaps, blur and translucency on shell surfaces, livelier animations.
 - GitHub Actions builds and signs `ghcr.io/tduarte/cobalt` when a milestone is
   pushed (and nightly); that's what real installs follow.
 - VM: GNOME Boxes VM `silverblue43`, switched to cobalt with `bootc switch`.
-  Start it with `just vm-start` (not Boxes' play button), then open it in
+  Start it with `just vm-start` or Boxes' play button, then open it in
   Boxes to view; `just vm-ssh` / `just vm-stop` for the rest.
   - virgl is pinned to the RX 9070 (`pci-0000:03:00.0-render`). The 610M
     iGPU is too slow at 4K, and Boxes drawing on a different GPU than the
     VM renders on garbles the display.
-  - Boxes drops the render-node pin when it starts a VM (libvirt then picks
-    the iGPU), which is why `vm-start` re-applies it on every start.
+  - Boxes drops the `<gl>` render-node pin when it starts a VM (libvirt then
+    picks the iGPU), so the pin also lives in the VM's `<qemu:commandline>`,
+    which Boxes keeps.
   - SSH: `127.0.0.1:2222` → VM port 22 through a QEMU `hostfwd` NIC (Boxes'
     Flatpak has no `passt`), key `~/.ssh/cobalt-vm`.
   - Hyprland needs `no_hardware_cursors` in the VM.
@@ -248,8 +253,9 @@ gaps, blur and translucency on shell surfaces, livelier animations.
    - Lock screen (hyprlock): clock at the top, avatar and name above the
      password, what's playing (click to play/pause), Restart / Power Off that
      only go ahead if every app closes
-   - gnome-keyring (unlocked by GDM's PAM, gcr's prompter) checked; SSH agent
-     is gcr-ssh-agent (`SSH_AUTH_SOCK`)
+   - Secrets: oo7 since Fedora 45 (unlocked by GDM's PAM, gcr's prompter); SSH
+     agent is gcr-ssh-agent (`SSH_AUTH_SOCK`). Switch the PC with an F45 image:
+     its keyring has already been migrated to oo7
    - **Mission Center** with Ctrl+Shift+Esc, installed from
      `/usr/share/cobalt/flatpaks.list` by `cobalt-flatpaks.service`
 

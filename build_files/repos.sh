@@ -21,7 +21,7 @@ dnf5 -y install --nogpgcheck \
     --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' \
     terra-release{,-extras,-mesa}
 dnf5 -y config-manager setopt "*terra*".priority=1 \
-    "*terra*".exclude="nerd-fonts scx-tools scx-scheds python3-protobuf zlib-devel uupd ghostty* hypr* aquamarine* astal* ags"
+    "*terra*".exclude="nerd-fonts ghostty* hypr* aquamarine* astal* ags"
 dnf5 -y config-manager setopt "terra-mesa".enabled=false
 
 # negativo17 (repo id fedora-multimedia) is disabled in base-main but its Mesa

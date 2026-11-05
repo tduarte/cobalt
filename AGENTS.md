@@ -38,10 +38,14 @@ services in podman, CLIs via Homebrew.
 
 ## Building the image
 
-- `just build <name> <tag>` resolves `FEDORA_VERSION` from
-  `base-main:latest` and `KERNEL_VERSION` from `akmods:ogc-<fedora>`, and pins
-  the base and both kernel images to them. `FROM base-main:latest` alone would
-  let them drift mid-build.
+- **Fedora and the kernel are pinned** by `FEDORA_VERSION` and `KERNEL_VERSION`
+  at the top of the `Containerfile`. Bump them on purpose and test in the VM:
+  F45 built fine and still silently broke the Terra repo cleanup and the
+  keyring. `KERNEL_VERSION` follows the kernel in Bazzite's stable release notes
+  (`gh release view -R ublue-os/bazzite`), and the `fc<NN>` part must match.
+- To inspect an image offline: `podman run --rm --network=none <image> bash -c
+  '...'`, including `rpm -q`, `dnf5 repolist --enabled` and
+  `Hyprland --verify-config` as a non-root user.
 - **Caching:** each step mounts only its own stage (`kernel-step`,
   `mesa-step`, ...). Editing one script reruns that step and everything after
   it; editing `system_files/` only reruns the last steps (~30 s). Never go back
@@ -66,12 +70,17 @@ services in podman, CLIs via Homebrew.
 | Mesa, Steam, gamescope, MangoHud, WirePlumber | Terra (priority 1) | `terra-mesa` repo is disabled and enabled per command; Fedora/negativo17 Mesa excluded. negativo17's repo id is `fedora-multimedia`. |
 | Xwayland | **Fedora**, not Terra | Hyprland requires `xorg-x11-server-Xwayland(x86-64)`; `terra-xorg-x11-server-Xwayland` only provides the unqualified name. |
 | ghostty | COPR `scottames/ghostty` | Terra's older ghostty is excluded (its add-on packages conflict). |
-| Hyprland 0.57 + tools | COPR `pm4rcin/Hyprland` | Fedora 44 doesn't ship Hyprland; `solopasha/hyprland` is Rawhide-only now. |
+| Hyprland 0.57 + tools | COPR `pm4rcin/Hyprland` | Fedora 45 doesn't ship Hyprland; `solopasha/hyprland` is Rawhide-only now. |
+| Secret Service | Fedora `oo7-daemon` + `oo7-portal`, `gcr3`'s `gcr-prompter` for the unlock dialog, `gcr` for the SSH agent | Since F45; GDM's PAM config starts and unlocks it on a password login, and `cobalt-session.target` starts it on autologin (no D-Bus activation). **Don't install `gnome-keyring` alongside it:** its D-Bus file for `org.freedesktop.secrets` starts `gnome-keyring-daemon`. Test prompts from inside the session (`hyprctl dispatch 'hl.dsp.exec_cmd(...)'`): over SSH oo7 uses its CLI prompter and fails with `NameHasNoOwner`. |
 | AGS + Astal | COPR `sinomor/astalRPM` | AGS is `aylurs-gtk-shell` (Fedora's `ags` is Adventure Game Studio). Terra's partial `astal*` is excluded. `libastal-notifd` lacks its gschema, so we ship `io.astal.notifd.gschema.xml` ourselves. AGS preloads unversioned `libgtk4-layer-shell.so` → needs `gtk4-layer-shell-devel`. |
 | GDM | Fedora | Hard-depends on gnome-shell/gnome-session; `desktop.sh` deletes the GNOME and stock Hyprland session files so GDM only offers **Cobalt**. |
 
 Add new COPRs to the loops in both `repos.sh` (enable) and `finalize.sh`
 (disable), and to Terra's exclude list if Terra has a same-named package.
+
+Since F45, packaged repo files live in `/usr/share/dnf5/repos.d`, not
+`/etc/yum.repos.d`. Change them with `dnf5 config-manager setopt` (it writes
+`/etc/dnf/repos.override.d/`), never `sed` on a path.
 
 ## Hyprland (0.55+ uses Lua)
 
@@ -127,7 +136,7 @@ registry). Boxes is a Flatpak: run libvirt tools as
 
 | Recipe | Does |
 |---|---|
-| `just vm-start` | Re-pins virgl to the RX 9070 and starts the VM. **Use this, not Boxes' play button.** |
+| `just vm-start` | Re-pins virgl to the RX 9070 and starts the VM. Boxes' play button also works now (see GPU below). |
 | `just vm-stop` | Graceful shutdown |
 | `just vm-ssh '<cmd>'` | SSH (127.0.0.1:2222, key `~/.ssh/cobalt-vm`); a quoted command runs entirely in the VM, pipes included |
 | `just registry` | Starts the `cobalt-registry` podman container (127.0.0.1:5000) |
@@ -142,8 +151,15 @@ Hard-won facts:
 - **GPU:** virgl must render on the **RX 9070** (`pci-0000:03:00.0-render`).
   The 610M iGPU is far too slow at 4K, and if QEMU renders on one GPU while
   Boxes draws on the other, the display is garbled. **Boxes drops the
-  `rendernode` pin whenever it starts the VM** (libvirt then picks
-  `renderD129`, the iGPU), so always start with `just vm-start`.
+  `rendernode` attribute of `<gl>` whenever it starts the VM** (libvirt then
+  passes `renderD129`, the iGPU), but it keeps `<qemu:commandline>`, and QEMU
+  uses the last `-spice rendernode=`. So the VM's XML ends that block with
+  `-spice` + `rendernode=/dev/dri/by-path/pci-0000:03:00.0-render`, and Boxes'
+  play button works. To check, see which `renderD*` the `qemu-system-x86`
+  process has open in `/proc/<pid>/fd`; the qemu line itself lists both nodes.
+- Don't pipe `just vm-start` or `vm-update` (`| tail`): the VM's processes
+  inherit the pipe, so the reader never gets EOF and the command hangs. Redirect
+  to a file. A QEMU started under `timeout flatpak run` also outlives the timeout.
 - **The VM's power button suspends it** (Settings > Power > Power Button
   Behavior, default Suspend), so `virsh shutdown` puts it to sleep instead of
   off; `just vm-stop` powers off over SSH. Wake a suspended guest with

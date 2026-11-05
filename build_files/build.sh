@@ -28,6 +28,6 @@ grep -q '^VARIANT_ID=' /usr/lib/os-release && sed -i 's/^VARIANT_ID=.*/VARIANT_I
 # Flathub apps from /usr/share/cobalt/flatpaks.list, installed at boot
 systemctl enable cobalt-flatpaks.service
 
-# SSH agent for the session (gnome-keyring's gcr-ssh-agent; cobalt-session
-# sets SSH_AUTH_SOCK to its socket)
+# SSH agent for the session (gcr-ssh-agent; cobalt-session sets SSH_AUTH_SOCK
+# to its socket)
 systemctl --global enable gcr-ssh-agent.socket

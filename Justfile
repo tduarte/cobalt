@@ -98,11 +98,7 @@ build $target_image=image_name $tag=default_tag:
 
     set -euox pipefail
 
-    # Follow base-main:latest, and pin base + both kernel images to one
-    # Fedora/kernel version so they can't drift apart mid-build.
-    FEDORA_VERSION=$(skopeo inspect --no-tags docker://ghcr.io/ublue-os/base-main:latest | jq -r '.Labels["org.opencontainers.image.version"]' | cut -d. -f1)
-    KERNEL_VERSION=$(skopeo inspect --no-tags "docker://ghcr.io/ublue-os/akmods:ogc-${FEDORA_VERSION}" | jq -r '.Labels["ostree.linux"]')
-    BUILD_ARGS=("--build-arg" "FEDORA_VERSION=${FEDORA_VERSION}" "--build-arg" "KERNEL_VERSION=${KERNEL_VERSION}")
+    # The Fedora and kernel versions are pinned at the top of the Containerfile.
     LABELS=()
     if [[ -z "$(git status -s)" ]]; then
         GIT_SHA=$(git rev-parse --short HEAD)
@@ -126,7 +122,7 @@ build $target_image=image_name $tag=default_tag:
     LABELS+=("--label" "org.opencontainers.image.vendor={{ repo_organization }}")
 
     # This actually builds the image!
-    PODMAN_BUILD_ARGS=("${BUILD_ARGS[@]}" "${LABELS[@]}" --pull=newer --tag "${target_image}:${tag}" --file Containerfile)
+    PODMAN_BUILD_ARGS=("${LABELS[@]}" --pull=newer --tag "${target_image}:${tag}" --file Containerfile)
 
     podman build "${PODMAN_BUILD_ARGS[@]}" .
 
