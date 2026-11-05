@@ -23,7 +23,7 @@ picture-options='zoom'
 # Default dash favorites for new users (GNOME's own key, so an existing GNOME
 # setup carries over)
 [org.gnome.shell]
-favorite-apps=['org.gnome.Nautilus.desktop', 'org.mozilla.firefox.desktop', 'steam.desktop', 'com.mitchellh.ghostty.desktop', 'org.gnome.TextEditor.desktop']
+favorite-apps=['org.gnome.Nautilus.desktop', 'app.zen_browser.zen.desktop', 'steam.desktop', 'com.mitchellh.ghostty.desktop', 'dev.zed.Zed.desktop']
 
 # Night Light: manual schedule (sunset/sunrise needs location services); the
 # shell applies it through hyprsunset

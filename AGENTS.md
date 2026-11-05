@@ -77,6 +77,13 @@ services in podman, CLIs via Homebrew.
 | AGS + Astal | COPR `sinomor/astalRPM` | AGS is `aylurs-gtk-shell` (Fedora's `ags` is Adventure Game Studio). Terra's partial `astal*` is excluded. `libastal-notifd` lacks its gschema, so we ship `io.astal.notifd.gschema.xml` ourselves. AGS preloads unversioned `libgtk4-layer-shell.so` → needs `gtk4-layer-shell-devel`. |
 | GDM | Fedora | Hard-depends on gnome-shell/gnome-session; `desktop.sh` deletes the GNOME and stock Hyprland session files so GDM only offers **Cobalt**. |
 
+Default apps are in `/etc/xdg/mimeapps.list`, which beats Fedora's
+`/usr/share/applications/mimeapps.list` (mail and calendars to Thunderbird,
+which we don't ship) and doesn't depend on `XDG_CURRENT_DESKTOP`, unlike
+`gnome-mimeapps.list`. An app named there must be in `flatpaks.list` or the
+image. AppImages need `fuse-libs` (`libfuse.so.2`); the `fuse` package alone
+doesn't provide it.
+
 Add new COPRs to the loops in both `repos.sh` (enable) and `finalize.sh`
 (disable), and to Terra's exclude list if Terra has a same-named package.
 

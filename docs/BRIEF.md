@@ -111,10 +111,25 @@ and roll back with the image.
 
 ## Apps from elsewhere
 
-- **In the image:** Nautilus (with gvfs), ghostty, system tools that need host
+- **In the image:** Nautilus (with gvfs), ghostty, Firefox (fallback browser),
+  GNOME Software (the only store), GNOME Disks, system tools that need host
   integration.
-- **Flatpak (Flathub):** Text Editor, Loupe, Papers, Calculator, ProtonPlus,
-  and everything else.
+- **Flatpak (Flathub):** everything else, listed in
+  `/usr/share/cobalt/flatpaks.list`. Gaming tools (ProtonPlus, Protontricks,
+  Bottles, LACT) aren't in it; install them by hand when needed.
+- **AppImage (decision):** apps with no good native package stay AppImages in
+  `~/AppImages`, managed by Gear Lever: Paseo and Orca (both update too often
+  for an image RPM), Claude, Comfy Desktop, Xodus Nexus. The image has
+  `fuse-libs` for them.
+- **Default apps** (`/etc/xdg/mimeapps.list`): Zen, Convey, Calendar, Zed,
+  Loupe, Papers, Showtime, Gapless for files, Cider for music links.
+- **Mail (decision 2026-11-04): Convey**, a libadwaita fork of Geary. Geary has
+  had no release since 2024 and is GTK3. Convey is young and mostly one
+  developer, so reconsider it if it slows down; GNOME's Stamp is the one to
+  watch once it has a Flatpak. Evolution is the established GTK3 fallback.
+- Not carried over from Bazzite (decision): Bazaar, GSConnect (no paired
+  devices; Valent isn't on Flathub), Ptyxis, input-remapper, Btrfs Assistant,
+  Waydroid, Lutris, Web App Manager.
 
 ## Gaming
 

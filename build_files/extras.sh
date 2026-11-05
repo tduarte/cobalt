@@ -15,3 +15,7 @@ curl -fsSL --retry 3 -o "$HANDY_RPM" \
 echo "${HANDY_SHA256}  ${HANDY_RPM}" | sha256sum -c -
 dnf5 -y install "$HANDY_RPM" wtype
 rpm -ql handy | grep -E "^/usr/bin/"
+
+# GNOME Disks needs host access, so it isn't a Flatpak. fuse-libs has the
+# libfuse.so.2 that most AppImages load (Paseo, Comfy Desktop, Xodus Nexus).
+dnf5 -y install gnome-disk-utility fuse-libs

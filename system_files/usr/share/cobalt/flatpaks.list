@@ -5,3 +5,32 @@ io.missioncenter.MissionCenter
 org.gnome.Calendar
 org.gnome.clocks
 org.gnome.Weather
+# Default apps (/etc/xdg/mimeapps.list)
+app.zen_browser.zen
+com.github.neithern.g4music
+dev.zed.Zed
+net.donnybeelo.Convey
+org.gnome.Loupe
+org.gnome.Papers
+org.gnome.Showtime
+sh.cider.Cider
+# GNOME apps
+org.gnome.baobab
+org.gnome.Boxes
+org.gnome.Calculator
+org.gnome.Characters
+org.gnome.Contacts
+org.gnome.Firmware
+org.gnome.font-viewer
+org.gnome.Logs
+org.gnome.NautilusPreviewer
+org.gnome.TextEditor
+# Everyday apps
+com.brave.Browser
+com.onepassword.OnePassword
+dev.vencord.Vesktop
+# App management; Gear Lever manages the AppImages in ~/AppImages
+com.github.tchx84.Flatseal
+io.github.dvlv.boxbuddyrs
+io.github.flattool.Warehouse
+it.mijorus.gearlever
