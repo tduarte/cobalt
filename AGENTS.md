@@ -54,8 +54,10 @@ services in podman, CLIs via Homebrew.
   between builds; `finalize.sh` resets it. Downloads are the slow part of a
   build (COPR/Terra mirrors are ~3–7 MB/s), not CPU.
 - CI (`.github/workflows/build.yml`) builds, rechunks and signs
-  `ghcr.io/tduarte/cobalt` on push and nightly. Rechunking drops the image
-  labels (expected). Verify with
+  `ghcr.io/tduarte/cobalt` on push and nightly. Rechunking is `just rechunk`
+  (chunkah, pinned by digest). On two consecutive builds with a small change,
+  the update download was 0.44 GiB vs 0.52 GiB with `just ostree-rechunk`,
+  which also needs `--privileged` and drops labels. Verify with
   `cosign verify --key cosign.pub ghcr.io/tduarte/cobalt:latest`.
   `cosign.key` is gitignored and lives in the `SIGNING_SECRET` repo secret.
 - `bootc container lint` warns about `/run/dnf` and `/run/setrans`; harmless.
